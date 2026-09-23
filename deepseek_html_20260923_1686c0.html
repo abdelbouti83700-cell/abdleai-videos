@@ -1,0 +1,1870 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Studio Vidéo IA</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    :root {
+        --bg: #0a0a0a; --panel: #141414; --panel-2: #1c1c1c; --border: #2a2a2a;
+        --ink: #f5f5f5; --ink-dim: #9a9a9a; --ink-faint: #555;
+        --accent: #4a6cf7; --accent-2: #e91e63;
+        --success: #2d8a4e; --error: #c0392b; --warn: #d4a017;
+        --radius: 14px;
+        --safe-top: env(safe-area-inset-top, 0px);
+        --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    html, body {
+        background: var(--bg); color: var(--ink);
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        font-size: 15px; line-height: 1.45;
+        -webkit-font-smoothing: antialiased;
+        overscroll-behavior-y: none;
+    }
+    body {
+        min-height: 100vh;
+        padding: calc(0.75rem + var(--safe-top)) 0.75rem calc(7rem + var(--safe-bottom));
+        max-width: 620px; margin: 0 auto;
+    }
+
+    .top-bar {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0.5rem 0 1rem; position: sticky; top: 0;
+        background: linear-gradient(180deg, var(--bg) 70%, transparent);
+        z-index: 20; margin: 0 -0.75rem; padding-left: 0.75rem; padding-right: 0.75rem;
+    }
+    .top-bar h1 {
+        font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em;
+        display: flex; align-items: center; gap: 0.4rem;
+        background: linear-gradient(90deg, var(--accent), var(--accent-2));
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .top-bar h1::before { content: '🎬'; -webkit-text-fill-color: initial; }
+    .top-bar .count-badge {
+        font-size: 0.7rem; background: var(--panel-2); color: var(--ink-dim);
+        padding: 0.25rem 0.6rem; border-radius: 10px; font-weight: 600;
+    }
+
+    .card {
+        background: var(--panel); border-radius: var(--radius);
+        margin-bottom: 0.6rem; overflow: hidden;
+        border: 1px solid var(--border);
+    }
+    .card-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0.9rem 1rem; cursor: pointer; user-select: none;
+        transition: background 0.15s;
+    }
+    .card-header:active { background: var(--panel-2); }
+    .card-title {
+        font-size: 0.85rem; font-weight: 600;
+        display: flex; align-items: center; gap: 0.5rem;
+    }
+    .card-title .pill {
+        font-size: 0.6rem; background: var(--accent); color: #fff;
+        padding: 0.15rem 0.5rem; border-radius: 8px; font-weight: 700;
+    }
+    .card-title .pill.gray { background: var(--panel-2); color: var(--ink-dim); }
+    .card-title .pill.pink { background: var(--accent-2); }
+    .card-title .pill.warn { background: var(--warn); color: #000; }
+    .chevron {
+        font-size: 0.7rem; color: var(--ink-faint);
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .card.open .chevron { transform: rotate(180deg); }
+    .card-body { max-height: 0; overflow: hidden; transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .card.open .card-body { max-height: 6000px; }
+    .card-content { padding: 0 1rem 1rem; }
+
+    input[type="text"], input[type="password"], input[type="number"], textarea, select {
+        width: 100%; padding: 0.85rem 1rem;
+        background: var(--panel-2); border: 1.5px solid transparent;
+        color: var(--ink); font-family: inherit; font-size: 0.92rem;
+        border-radius: 12px; transition: border-color 0.2s;
+        -webkit-appearance: none; appearance: none;
+    }
+    input:focus, textarea:focus, select:focus {
+        outline: none; border-color: var(--accent);
+    }
+    textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
+    select {
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%239a9a9a' d='M0 0l5 6 5-6z'/></svg>");
+        background-repeat: no-repeat; background-position: right 1rem center;
+        background-size: 10px; padding-right: 2.5rem;
+    }
+    input::placeholder, textarea::placeholder { color: var(--ink-faint); }
+
+    button {
+        font-family: inherit; cursor: pointer; border: none;
+        border-radius: 12px; font-weight: 600; transition: all 0.15s;
+    }
+    button:active { transform: scale(0.97); }
+    .btn-primary {
+        width: 100%; padding: 1.1rem;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        color: #fff; font-size: 1rem; font-weight: 700;
+        box-shadow: 0 4px 20px rgba(74, 108, 247, 0.35);
+    }
+    .btn-primary:disabled {
+        background: var(--panel-2); color: var(--ink-faint);
+        box-shadow: none; cursor: not-allowed;
+    }
+    .btn-secondary {
+        width: 100%; padding: 0.85rem;
+        background: var(--panel-2); color: var(--ink);
+        font-size: 0.88rem; font-weight: 600;
+        border: 1px solid var(--border);
+    }
+    .btn-danger {
+        width: 100%; padding: 0.9rem;
+        background: rgba(192, 57, 43, 0.15); color: var(--error);
+        font-size: 0.9rem; font-weight: 600;
+    }
+    .btn-inline {
+        padding: 0.55rem 0.9rem; background: var(--panel-2);
+        color: var(--ink); font-size: 0.8rem; font-weight: 600;
+        border: 1px solid var(--border); white-space: nowrap;
+    }
+
+    .api-status {
+        display: flex; align-items: center; gap: 0.5rem;
+        font-size: 0.75rem; padding: 0.6rem 0.8rem;
+        background: var(--panel-2); border-radius: 10px;
+        margin-top: 0.6rem; color: var(--ink-dim);
+    }
+    .api-status.ok { color: var(--success); }
+    .api-status .dot {
+        width: 7px; height: 7px; border-radius: 50%;
+        background: var(--ink-faint); flex-shrink: 0;
+    }
+    .api-status.ok .dot {
+        background: var(--success);
+        box-shadow: 0 0 8px var(--success);
+    }
+    .api-hint { font-size: 0.7rem; color: var(--ink-faint); margin-top: 0.5rem; line-height: 1.4; }
+    .api-hint a { color: var(--accent); text-decoration: none; }
+    .status-row {
+        display: flex; justify-content: space-between; gap: 0.5rem;
+        font-size: 0.72rem; color: var(--ink-dim);
+        background: var(--panel-2); padding: 0.55rem 0.8rem;
+        border-radius: 10px; margin-top: 0.5rem; flex-wrap: wrap;
+    }
+
+    .upload-zone {
+        border: 2px dashed var(--border); border-radius: var(--radius);
+        padding: 2rem 1rem; text-align: center; cursor: pointer;
+        transition: all 0.2s; background: var(--panel);
+        margin-bottom: 0.75rem;
+    }
+    .upload-zone:active { border-color: var(--accent); background: var(--panel-2); }
+    .upload-zone input { display: none; }
+    .upload-icon { font-size: 2rem; margin-bottom: 0.4rem; opacity: 0.7; }
+    .upload-text { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.15rem; }
+    .upload-hint { font-size: 0.72rem; color: var(--ink-dim); }
+
+    .images-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+        gap: 0.4rem; margin-bottom: 0.75rem;
+    }
+    .image-card {
+        position: relative; border-radius: 10px; overflow: hidden;
+        background: var(--panel-2); aspect-ratio: 9/16;
+    }
+    .image-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .image-card .remove {
+        position: absolute; top: 3px; right: 3px;
+        background: rgba(0,0,0,0.75); color: #fff; border: none;
+        width: 20px; height: 20px; border-radius: 50%; font-size: 10px;
+        display: flex; align-items: center; justify-content: center;
+        padding: 0; line-height: 1;
+    }
+
+    .presets-scroll {
+        display: flex; gap: 0.4rem; overflow-x: auto;
+        padding-bottom: 0.4rem; margin-top: 0.6rem;
+        scrollbar-width: none; -ms-overflow-style: none;
+    }
+    .presets-scroll::-webkit-scrollbar { display: none; }
+    .preset-chip {
+        flex-shrink: 0; padding: 0.5rem 0.9rem;
+        background: var(--panel-2); border: 1px solid var(--border);
+        border-radius: 20px; font-size: 0.75rem; font-weight: 500;
+        white-space: nowrap; cursor: pointer;
+    }
+    .preset-chip:active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    .search-row {
+        display: flex; gap: 0.5rem; margin-bottom: 0.6rem;
+    }
+    .search-row input { flex: 1; }
+    .effect-counter {
+        font-size: 0.7rem; color: var(--ink-dim); margin-bottom: 0.5rem;
+        display: flex; justify-content: space-between;
+    }
+    .effects-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 0.4rem;
+    }
+    .effect-chip {
+        padding: 0.7rem 0.8rem; border-radius: 12px;
+        background: var(--panel-2); border: 1.5px solid transparent;
+        display: flex; align-items: center; gap: 0.5rem;
+        cursor: pointer; transition: all 0.15s;
+        min-width: 0;
+    }
+    .effect-chip:active { transform: scale(0.97); }
+    .effect-chip.selected {
+        background: var(--accent); color: #fff;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px var(--accent), 0 4px 16px rgba(74, 108, 247, 0.4);
+    }
+    .effect-chip .emo { font-size: 1.15rem; flex-shrink: 0; line-height: 1; }
+    .effect-chip .info { min-width: 0; }
+    .effect-chip .name {
+        font-size: 0.78rem; font-weight: 600; line-height: 1.2;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .effect-chip .desc {
+        font-size: 0.62rem; opacity: 0.65; line-height: 1.2;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .none-chip {
+        grid-column: 1 / -1; text-align: center;
+        padding: 0.75rem; border-radius: 12px;
+        border: 1.5px dashed var(--border);
+        font-size: 0.8rem; color: var(--ink-dim); cursor: pointer;
+    }
+    .none-chip.selected {
+        border-style: solid; border-color: var(--accent);
+        background: var(--panel-2); color: var(--ink); font-weight: 600;
+    }
+
+    .duration-grid {
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.35rem;
+    }
+    .duration-chip {
+        padding: 0.7rem 0.3rem; text-align: center;
+        background: var(--panel-2); border-radius: 10px;
+        border: 1.5px solid transparent; cursor: pointer;
+        transition: all 0.15s;
+    }
+    .duration-chip:active { transform: scale(0.97); }
+    .duration-chip.selected {
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        color: #fff; border-color: transparent;
+        box-shadow: 0 4px 16px rgba(74, 108, 247, 0.4);
+    }
+    .duration-chip .dur-val { font-size: 0.9rem; font-weight: 700; line-height: 1; }
+    .duration-chip .dur-label { font-size: 0.58rem; opacity: 0.7; margin-top: 0.15rem; }
+
+    .custom-duration-row {
+        display: flex; gap: 0.5rem; align-items: center; margin-top: 0.6rem;
+    }
+    .custom-duration-row input[type="number"] {
+        flex: 1; text-align: center;
+    }
+
+    .duration-info {
+        background: var(--panel-2); border-radius: 10px;
+        padding: 0.7rem 0.85rem; margin-top: 0.6rem;
+        font-size: 0.75rem; line-height: 1.5;
+        border-left: 3px solid var(--accent);
+    }
+    .duration-info .big {
+        font-size: 1.1rem; font-weight: 700; color: var(--accent);
+        display: block; margin-bottom: 0.2rem;
+    }
+
+    .field { margin-bottom: 0.7rem; }
+    .field:last-child { margin-bottom: 0; }
+    .field-label {
+        display: block; font-size: 0.68rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.06em;
+        color: var(--ink-dim); margin-bottom: 0.35rem;
+    }
+
+    .action-bar {
+        position: fixed; bottom: 0; left: 0; right: 0;
+        padding: 0.75rem 0.75rem calc(0.75rem + var(--safe-bottom));
+        background: linear-gradient(180deg, transparent, var(--bg) 30%);
+        z-index: 50; max-width: 620px; margin: 0 auto;
+    }
+
+    .global-progress {
+        position: fixed; top: 0; left: 0; right: 0;
+        height: 4px; background: var(--panel-2); z-index: 100;
+        display: none;
+    }
+    .global-progress.visible { display: block; }
+    .global-progress .bar {
+        height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2));
+        width: 0%; transition: width 0.3s;
+    }
+
+    .queue-summary {
+        display: flex; justify-content: space-between; align-items: center;
+        background: var(--panel); padding: 0.65rem 0.85rem;
+        border-radius: 12px; font-size: 0.78rem;
+        margin-bottom: 0.4rem; border: 1px solid var(--border);
+        flex-wrap: wrap; gap: 0.3rem;
+    }
+    .queue-summary .prog { font-weight: 700; }
+    .queue-summary .eta { color: var(--ink-dim); font-size: 0.72rem; }
+    .q-item {
+        display: flex; align-items: center; gap: 0.7rem;
+        padding: 0.65rem 0.8rem; border-radius: 10px;
+        background: var(--panel); margin-bottom: 0.35rem;
+        font-size: 0.78rem; border-left: 3px solid var(--border);
+        transition: border-color 0.3s;
+    }
+    .q-item.pending { opacity: 0.45; }
+    .q-item.creating { border-left-color: var(--warn); }
+    .q-item.processing { border-left-color: var(--accent); }
+    .q-item.done { border-left-color: var(--success); }
+    .q-item.failed { border-left-color: var(--error); }
+    .q-item .q-emo { font-size: 0.95rem; flex-shrink: 0; }
+    .q-item .q-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .q-item .q-status { font-size: 0.7rem; color: var(--ink-dim); flex-shrink: 0; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
+
+    .gallery-grid {
+        display: grid; grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+    .gallery-item {
+        border-radius: 12px; overflow: hidden;
+        background: #000; border: 1px solid var(--border);
+        animation: fadeIn 0.4s ease;
+    }
+    .gallery-item video { width: 100%; display: block; aspect-ratio: 9/16; object-fit: cover; }
+    .gallery-item .cap {
+        padding: 0.4rem 0.55rem; background: var(--panel);
+        font-size: 0.68rem; color: var(--ink-dim);
+        display: flex; justify-content: space-between; align-items: center; gap: 0.3rem;
+    }
+    .gallery-item .cap .dl {
+        background: var(--accent); color: #fff;
+        padding: 0.25rem 0.55rem; border-radius: 6px;
+        font-size: 0.62rem; font-weight: 700; text-decoration: none;
+        flex-shrink: 0;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .status-bar {
+        position: fixed; left: 0.75rem; right: 0.75rem;
+        bottom: calc(5.5rem + var(--safe-bottom));
+        background: var(--panel); border: 1px solid var(--border);
+        color: var(--ink); padding: 0.75rem 1rem;
+        border-radius: 12px; font-size: 0.8rem;
+        display: flex; align-items: center; gap: 0.6rem;
+        transform: translateY(200%); transition: transform 0.3s;
+        z-index: 60; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        max-width: 620px; margin: 0 auto;
+    }
+    .status-bar.visible { transform: translateY(0); }
+    .spinner {
+        width: 14px; height: 14px; flex-shrink: 0;
+        border: 2px solid var(--border); border-top-color: var(--accent);
+        border-radius: 50%; animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .toast {
+        position: fixed; top: calc(1rem + var(--safe-top)); left: 1rem; right: 1rem;
+        background: var(--panel); border: 1px solid var(--border);
+        color: var(--ink); padding: 0.85rem 1rem;
+        border-radius: 14px; font-size: 0.85rem; font-weight: 600;
+        z-index: 1000; opacity: 0;
+        transform: translateY(-20px);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        display: flex; align-items: center; gap: 0.6rem;
+        max-width: 620px; margin: 0 auto;
+    }
+    .toast.visible { opacity: 1; transform: translateY(0); }
+    .toast.success { border-color: var(--success); }
+    .toast.error { border-color: var(--error); }
+    .toast.warn { border-color: var(--warn); }
+
+    #nsCanvas, #nsVideo {
+        position: fixed; top: -10px; left: -10px;
+        width: 1px; height: 1px; opacity: 0.01;
+        pointer-events: none; z-index: -1;
+    }
+
+    @media (max-width: 360px) {
+        .effects-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+        .effect-chip .desc { display: none; }
+        .duration-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+</style>
+</head>
+<body>
+
+<div class="global-progress" id="global-progress">
+    <div class="bar" id="global-progress-bar"></div>
+</div>
+
+<div class="top-bar">
+    <h1>Studio Vidéo IA</h1>
+    <span class="count-badge" id="count-badge">0 img</span>
+</div>
+
+<!-- CLÉ API -->
+<div class="card open" id="card-api">
+    <div class="card-header" data-toggle="card-api">
+        <span class="card-title">
+            🔑 Clé API
+            <span class="pill" id="api-pill">requis</span>
+        </span>
+        <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+        <div class="card-content">
+            <input type="password" id="api-key-input" placeholder="sk-... (collez votre clé)" autocomplete="off" spellcheck="false">
+            <button type="button" class="btn-secondary" id="api-save-btn" style="margin-top:0.5rem;">Enregistrer</button>
+            <div class="api-status" id="api-status">
+                <span class="dot"></span>
+                <span id="api-status-text">Aucune clé enregistrée</span>
+            </div>
+            <div class="api-hint">
+                Clé gratuite : <a href="https://platform.agnes-ai.com" target="_blank">platform.agnes-ai.com</a> → Settings → API Keys
+            </div>
+            <div class="status-row">
+                <span>⚡ <span id="stat-speed">en attente</span></span>
+                <span id="stat-samples">0 génération</span>
+            </div>
+            <div style="margin-top:0.5rem;">
+                <button type="button" class="btn-secondary" id="wake-toggle-btn" style="font-size:0.78rem; padding:0.6rem;">
+                    💤 Garder l'écran allumé
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- IMAGE -->
+<div class="upload-zone" id="upload-zone">
+    <input type="file" id="file-input" accept="image/*">
+    <div class="upload-icon">＋</div>
+    <div class="upload-text">Image de départ</div>
+    <div class="upload-hint">Une seule image pour générer la vidéo</div>
+</div>
+<div class="images-grid" id="images-grid"></div>
+
+<!-- PROMPT -->
+<div class="card open" id="card-prompt">
+    <div class="card-header" data-toggle="card-prompt">
+        <span class="card-title">
+            ✍️ Ton prompt
+            <span class="pill pink">essentiel</span>
+        </span>
+        <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+        <div class="card-content">
+            <textarea id="main-prompt" placeholder="Décris la vidéo que tu veux créer. Exemple : « Une fille danse dans une rue néon sous la pluie, ambiance cyberpunk, mouvement fluide »"></textarea>
+            <div class="presets-scroll" id="prompt-presets"></div>
+        </div>
+    </div>
+</div>
+
+<!-- DURÉE -->
+<div class="card open" id="card-duration">
+    <div class="card-header" data-toggle="card-duration">
+        <span class="card-title">
+            ⏱️ Durée totale
+            <span class="pill warn" id="duration-pill">30s</span>
+        </span>
+        <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+        <div class="card-content">
+            <div class="duration-grid" id="duration-grid">
+                <div class="duration-chip" data-sec="5"><div class="dur-val">5s</div><div class="dur-label">Test</div></div>
+                <div class="duration-chip" data-sec="15"><div class="dur-val">15s</div><div class="dur-label">Court</div></div>
+                <div class="duration-chip selected" data-sec="30"><div class="dur-val">30s</div><div class="dur-label">Moyen</div></div>
+                <div class="duration-chip" data-sec="60"><div class="dur-val">1 min</div><div class="dur-label">Standard</div></div>
+                <div class="duration-chip" data-sec="180"><div class="dur-val">3 min</div><div class="dur-label">Long</div></div>
+                <div class="duration-chip" data-sec="300"><div class="dur-val">5 min</div><div class="dur-label">Étendu</div></div>
+                <div class="duration-chip" data-sec="600"><div class="dur-val">10 min</div><div class="dur-label">Projet</div></div>
+                <div class="duration-chip" data-sec="1800"><div class="dur-val">30 min</div><div class="dur-label">Épique</div></div>
+                <div class="duration-chip" data-sec="3600"><div class="dur-val">60 min</div><div class="dur-label">Maximum</div></div>
+            </div>
+            <div class="custom-duration-row">
+                <input type="number" id="custom-duration-input" min="1" max="60" step="1" placeholder="Durée en minutes (1-60)">
+                <button type="button" class="btn-inline" id="custom-duration-btn">OK</button>
+            </div>
+            <div class="duration-info" id="duration-info">
+                <span class="big" id="duration-big">30 secondes</span>
+                <span id="duration-detail">≈ 6 segments de 5s</span>
+            </div>
+            <div class="api-hint" style="margin-top:0.6rem;">
+                ⚠️ L'IA génère des clips de 5s maximum. Pour une vidéo plus longue, on en génère plusieurs et on les télécharge tous.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- EFFET -->
+<div class="card" id="card-effects">
+    <div class="card-header" data-toggle="card-effects">
+        <span class="card-title">
+            🎨 Style visuel
+            <span class="pill gray">optionnel</span>
+        </span>
+        <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+        <div class="card-content">
+            <select id="category-select" style="margin-bottom:0.6rem;"></select>
+            <div class="search-row">
+                <input type="text" id="search-input" placeholder="Rechercher…">
+                <button type="button" class="btn-inline" id="random-btn">🎲</button>
+            </div>
+            <div class="effect-counter">
+                <span id="effects-counter-text">…</span>
+            </div>
+            <div class="effects-grid" id="effects-grid"></div>
+        </div>
+    </div>
+</div>
+
+<!-- RÉGLAGES -->
+<div class="card" id="card-tech">
+    <div class="card-header" data-toggle="card-tech">
+        <span class="card-title">📷 Réglages</span>
+        <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+        <div class="card-content">
+            <div class="field">
+                <label class="field-label">Cadrage</label>
+                <select id="framing-select">
+                    <option value="random">Aléatoire</option>
+                    <option value="close">Gros plan</option>
+                    <option value="medium">Buste</option>
+                    <option value="wide">Plan large</option>
+                </select>
+            </div>
+            <div class="field">
+                <label class="field-label">Intensité du mouvement</label>
+                <select id="intensity-select">
+                    <option value="random">Aléatoire</option>
+                    <option value="subtle">Subtile</option>
+                    <option value="moderate">Modérée</option>
+                    <option value="strong">Forte</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="queue" style="display:none; margin-top:0.5rem;"></div>
+
+<div id="gallery" style="display:none; margin-top:0.75rem;">
+    <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-dim); margin-bottom:0.5rem;">Vidéos générées</div>
+    <div class="gallery-grid" id="gallery-grid"></div>
+</div>
+
+<div class="action-bar">
+    <button type="button" class="btn-primary" id="generate-btn" disabled>
+        Ajoutez une image
+    </button>
+    <button type="button" class="btn-danger" id="stop-btn" style="display:none; margin-top:0.5rem;">
+        ⏹ Arrêter
+    </button>
+</div>
+
+<div class="status-bar" id="status-bar">
+    <div class="spinner"></div>
+    <span id="status-text">Préparation…</span>
+</div>
+
+<div class="toast" id="toast">
+    <span id="toast-icon">✓</span>
+    <span id="toast-text">Message</span>
+</div>
+
+<canvas id="nsCanvas" width="2" height="2"></canvas>
+<video id="nsVideo" playsinline muted loop></video>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════════════════
+const API_BASE = 'https://apihub.agnes-ai.com/v1';
+const POLL_BASE = 'https://apihub.agnes-ai.com/agnesapi';
+const MODEL_VIDEO = 'agnes-video-v2.0';
+const FRAME_RATE = 24;
+const SEGMENT_FRAMES = 121;
+const SEGMENT_SECONDS = SEGMENT_FRAMES / FRAME_RATE;
+
+let createIntervalMs = 62000;
+const CREATE_INTERVAL_MIN = 62000;
+const CREATE_INTERVAL_MAX = 90000;
+const POLL_INTERVAL_SEC = 8;
+const MAX_POLL_ATTEMPTS = 120;
+
+const API_KEY_STORAGE = 'agnes_api_key';
+const WAKE_LOCK_PREF = 'agnes_wakelock_enabled';
+const TIMING_CACHE_KEY = 'video_timing_v1';
+const MAX_IMAGE_SIZE = 12 * 1024 * 1024;
+const THUMBNAIL_MAX_WIDTH = 160;
+
+// ══════════════════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════════════════
+let toastTimeout = null;
+function showToast(message, type = 'success', duration = 2500) {
+    const t = document.getElementById('toast');
+    const i = document.getElementById('toast-icon');
+    const x = document.getElementById('toast-text');
+    if (!t || !i || !x) return;
+    t.classList.remove('visible', 'success', 'error', 'warn');
+    void t.offsetWidth;
+    const icons = { success: '✓', error: '✕', warn: '⚠' };
+    i.textContent = icons[type] || '✓';
+    x.textContent = message;
+    t.classList.add(type);
+    requestAnimationFrame(() => t.classList.add('visible'));
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => t.classList.remove('visible'), duration);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ANTI-VEILLE
+// ══════════════════════════════════════════════════════════════════
+let wakeLockSentinel = null;
+let wakeLockEnabled = false;
+let canvasStream = null;
+let canvasInterval = null;
+function isWakeLockSupported() { return 'wakeLock' in navigator && typeof navigator.wakeLock.request === 'function'; }
+async function requestWakeLockAPI() {
+    if (!isWakeLockSupported()) return false;
+    try {
+        wakeLockSentinel = await navigator.wakeLock.request('screen');
+        wakeLockSentinel.addEventListener('release', () => { wakeLockSentinel = null; updateWakeBtn(); });
+        return true;
+    } catch (e) { return false; }
+}
+async function releaseWakeLockAPI() {
+    if (wakeLockSentinel) { try { await wakeLockSentinel.release(); } catch (e) {} wakeLockSentinel = null; }
+}
+function startCanvasStream() {
+    if (canvasStream) return true;
+    try {
+        const canvas = document.getElementById('nsCanvas');
+        const video = document.getElementById('nsVideo');
+        if (!canvas || !video) return false;
+        const ctx = canvas.getContext('2d');
+        if (!ctx || typeof canvas.captureStream !== 'function') return false;
+        ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        canvasStream = canvas.captureStream(1);
+        let toggle = false;
+        canvasInterval = setInterval(() => {
+            toggle = !toggle;
+            ctx.fillStyle = toggle ? '#000' : '#010101';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }, 1000);
+        video.srcObject = canvasStream; video.muted = true; video.playsInline = true;
+        const p = video.play(); if (p && p.catch) p.catch(() => {});
+        return true;
+    } catch (e) { return false; }
+}
+function stopCanvasStream() {
+    if (canvasInterval) { clearInterval(canvasInterval); canvasInterval = null; }
+    const video = document.getElementById('nsVideo');
+    if (video) { try { video.pause(); video.srcObject = null; } catch (e) {} }
+    if (canvasStream) { try { canvasStream.getTracks().forEach(t => t.stop()); } catch (e) {} canvasStream = null; }
+}
+async function activateWakeLock() {
+    let ok = false;
+    if (isWakeLockSupported()) ok = await requestWakeLockAPI();
+    if (!ok) ok = startCanvasStream();
+    if (!ok && !canvasStream) ok = startCanvasStream();
+    return ok;
+}
+async function deactivateWakeLock() { await releaseWakeLockAPI(); stopCanvasStream(); }
+function updateWakeBtn() {
+    const btn = document.getElementById('wake-toggle-btn');
+    if (!btn) return;
+    const isActive = wakeLockSentinel !== null || canvasStream !== null;
+    if (wakeLockEnabled && isActive) { btn.textContent = '✅ Écran allumé — désactiver'; btn.style.color = 'var(--success)'; }
+    else if (wakeLockEnabled && !isActive) { btn.textContent = '⏳ En attente — touchez la page'; btn.style.color = 'var(--warn)'; }
+    else { btn.textContent = '💤 Garder l\'écran allumé'; btn.style.color = ''; }
+}
+async function toggleWakeLock() {
+    if (wakeLockEnabled) {
+        wakeLockEnabled = false; await deactivateWakeLock();
+        try { localStorage.setItem(WAKE_LOCK_PREF, '0'); } catch (e) {}
+        showToast('Veille réactivée', 'warn');
+    } else {
+        wakeLockEnabled = true; const ok = await activateWakeLock();
+        try { localStorage.setItem(WAKE_LOCK_PREF, '1'); } catch (e) {}
+        showToast(ok ? 'Écran restera allumé' : 'Activez dans les réglages', ok ? 'success' : 'warn');
+    }
+    updateWakeBtn();
+}
+document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'visible' && wakeLockEnabled) {
+        await activateWakeLock(); updateWakeBtn();
+    }
+});
+
+// ══════════════════════════════════════════════════════════════════
+// PRESETS PROMPT
+// ══════════════════════════════════════════════════════════════════
+const PROMPT_PRESETS = [
+    { label: '🌬️ Vent léger', text: 'Anime doucement l\'image. Un vent léger fait bouger les cheveux et les feuilles. La lumière est chaude et dorée. Garde le sujet identique à la photo.' },
+    { label: '💭 Rêve', text: 'Prolonge cette image dans un rêve éveillé. Mouvements très lents, respiration visible, lumière douce et diffuse.' },
+    { label: '🌅 Golden hour', text: 'Anime avec une lumière dorée de fin de journée. Longues ombres chaudes, reflets lumineux, ambiance cinématographique.' },
+    { label: '🌙 Nuit', text: 'Ambiance nocturne paisible. Lumière bleutée, reflets argentés, mouvement très lent.' },
+    { label: '🎬 Ciné', text: 'Esthétique cinématographique. Mouvement de caméra lent, lumière dramatique, profondeur de champ.' },
+    { label: '🌊 Voyage', text: 'Voyage contemplatif à travers des paysages oniriques, la caméra avance lentement, ambiance paisible.' },
+];
+
+// ══════════════════════════════════════════════════════════════════
+// CATÉGORIES (41 catégories, 300+ effets)
+// ══════════════════════════════════════════════════════════════════
+const CATEGORIES = [
+{ name: '🎨 Styles', effects: [
+    { id:'simpson', name:'Simpson', emoji:'🍩', desc:'Cartoon', prompt:'The Simpsons cartoon style, yellow skin, thick outlines.' },
+    { id:'ghibli', name:'Ghibli', emoji:'🌿', desc:'Anime', prompt:'Studio Ghibli anime style, watercolor backgrounds.' },
+    { id:'manga', name:'Manga N&B', emoji:'🖤', desc:'Manga', prompt:'black and white manga, ink outlines, screentones.' },
+    { id:'pixar', name:'Pixar 3D', emoji:'✨', desc:'3D', prompt:'Pixar 3D animation, subsurface scattering.' },
+    { id:'cyberpunk', name:'Cyberpunk', emoji:'🌃', desc:'Néon', prompt:'cyberpunk, neon pink and cyan, Blade Runner.' },
+    { id:'watercolor', name:'Aquarelle', emoji:'🎨', desc:'Aquarelle', prompt:'watercolor painting, soft bleeding edges.' },
+    { id:'oil', name:'Huile', emoji:'🖼️', desc:'Huile', prompt:'oil painting, impasto brushstrokes, old master.' },
+    { id:'pixel-art', name:'Pixel Art', emoji:'👾', desc:'Retro', prompt:'pixel art, 16-bit game aesthetic.' },
+    { id:'vaporwave', name:'Vaporwave', emoji:'🌴', desc:'90s', prompt:'vaporwave, 90s aesthetic, VHS quality.' },
+    { id:'comic', name:'BD', emoji:'📘', desc:'Ligne claire', prompt:'Franco-Belgian bande dessinée, ligne claire.' },
+    { id:'claymation', name:'Claymation', emoji:'🧱', desc:'Pâte', prompt:'claymation, plasticine texture, Aardman.' },
+    { id:'kawaii', name:'Kawaii', emoji:'🌸', desc:'Mignon', prompt:'kawaii style, chibi, pastel colors.' },
+] },
+{ name: '💡 Ambiances', effects: [
+    { id:'cinematic', name:'Cinématique', emoji:'🎬', desc:'Film', prompt:'cinematic film look, dramatic lighting, film grain.' },
+    { id:'golden-hour', name:'Golden Hour', emoji:'🌅', desc:'Dorée', prompt:'golden hour sunlight, warm amber glow.' },
+    { id:'bw', name:'Noir & Blanc', emoji:'⚫', desc:'Monochrome', prompt:'elegant black and white, high contrast.' },
+    { id:'pastel-dream', name:'Pastel', emoji:'🌸', desc:'Doux', prompt:'soft pastel palette, dreamy diffused light.' },
+    { id:'neon-urban', name:'Néon Urbain', emoji:'🌆', desc:'Néon', prompt:'neon-soaked night, colorful reflections.' },
+    { id:'vintage-super8', name:'Super 8', emoji:'📽️', desc:'Rétro', prompt:'vintage Super 8, grain, warm faded colors.' },
+    { id:'dramatic', name:'Dramatique', emoji:'🌓', desc:'Contraste', prompt:'high contrast dramatic, chiaroscuro.' },
+    { id:'misty', name:'Brume', emoji:'🌫️', desc:'Halo', prompt:'atmospheric mist, soft haze, glowing light.' },
+    { id:'moonlight', name:'Clair de Lune', emoji:'🌙', desc:'Bleuté', prompt:'moonlight, blue and silver tones.' },
+    { id:'candle', name:'Bougie', emoji:'🕯️', desc:'Chaud', prompt:'candlelight, warm yellow, intimate mood.' },
+    { id:'god-rays', name:'Rayons', emoji:'☀️', desc:'Divin', prompt:'god rays through clouds, volumetric light.' },
+    { id:'aurora', name:'Aurore', emoji:'🌌', desc:'Boréale', prompt:'aurora borealis, green and purple sky.' },
+] },
+{ name: '🎥 Caméra', effects: [
+    { id:'dolly-zoom', name:'Dolly Zoom', emoji:'🌀', desc:'Vertigo', prompt:'dolly zoom, perspective distortion.' },
+    { id:'orbit-360', name:'Orbite 360', emoji:'🔄', desc:'Tour', prompt:'camera orbits 360 around subject.' },
+    { id:'drone', name:'Drone', emoji:'🚁', desc:'Aérien', prompt:'aerial drone shot, rising above landscape.' },
+    { id:'crane', name:'Crane', emoji:'🏗️', desc:'Montée', prompt:'crane shot, rising vertically.' },
+    { id:'steadicam', name:'Steadicam', emoji:'🎯', desc:'Fluide', prompt:'smooth steadicam tracking shot.' },
+    { id:'push-in', name:'Push-In', emoji:'➡️', desc:'Zoom avant', prompt:'slow dramatic push-in toward subject.' },
+    { id:'pull-out', name:'Pull-Out', emoji:'⬅️', desc:'Révélation', prompt:'slow pull-out revealing context.' },
+    { id:'rack-focus', name:'Rack Focus', emoji:'🔍', desc:'Netteté', prompt:'rack focus, shallow depth of field.' },
+    { id:'parallax', name:'Parallaxe', emoji:'🎭', desc:'2.5D', prompt:'2.5D parallax, depth layers.' },
+    { id:'pov', name:'POV', emoji:'👁️', desc:'Subjectif', prompt:'first-person POV shot.' },
+    { id:'handheld', name:'Épaule', emoji:'🤳', desc:'Brut', prompt:'handheld shaky camera, documentary urgency.' },
+    { id:'dutch', name:'Dutch Angle', emoji:'📐', desc:'Incliné', prompt:'dutch angle, off-kilter composition.' },
+] },
+{ name: '✂️ Cuts', effects: [
+    { id:'jump-cut', name:'Jump Cut', emoji:'⏭️', desc:'Sèche', prompt:'rhythmic jump cuts, time jumps.' },
+    { id:'match-cut', name:'Match Cut', emoji:'🎯', desc:'Forme', prompt:'match cut between two similar shapes.' },
+    { id:'smash-cut', name:'Smash Cut', emoji:'💥', desc:'Rupture', prompt:'smash cut, abrupt tonal shift.' },
+    { id:'quick-montage', name:'Montage Rapide', emoji:'⚡', desc:'Rapide', prompt:'rapid-fire montage of short clips.' },
+    { id:'flash', name:'Flash Blanc', emoji:'⚪', desc:'Éclair', prompt:'white flash transition, memory cut.' },
+    { id:'glitch', name:'Glitch Cut', emoji:'📺', desc:'Numérique', prompt:'digital glitch transition, pixelated.' },
+    { id:'morph', name:'Morphing', emoji:'🦋', desc:'Morph', prompt:'smooth morphing transition.' },
+    { id:'zoom-cut', name:'Zoom Cut', emoji:'🔎', desc:'Zoom', prompt:'zoom into detail that becomes next shot.' },
+    { id:'slow-motion', name:'Ralenti', emoji:'🐌', desc:'Slow-mo', prompt:'slow motion, every detail visible.' },
+    { id:'speed-up', name:'Accéléré', emoji:'⏩', desc:'Timelapse', prompt:'time-lapse, hours compressed.' },
+    { id:'loop', name:'Boucle', emoji:'🔁', desc:'Loop', prompt:'seamless looping animation.' },
+    { id:'time-reverse', name:'Inversé', emoji:'⏪', desc:'Backward', prompt:'reverse time, actions running backward.' },
+] },
+{ name: '🥋 Action', effects: [
+    { id:'kung-fu', name:'Kung Fu', emoji:'🥋', desc:'Chinois', prompt:'cinematic kung fu, high kicks, slow-motion impact.' },
+    { id:'karate', name:'Karaté', emoji:'🀄', desc:'Japonais', prompt:'karate, powerful strikes, dojo training.' },
+    { id:'boxe', name:'Boxe', emoji:'🥊', desc:'Ring', prompt:'boxing match, punches, sweat, ring spotlight.' },
+    { id:'mma', name:'MMA', emoji:'🤼', desc:'Combat', prompt:'MMA cage fight, takedowns, intense.' },
+    { id:'samurai', name:'Samouraï', emoji:'⚔️', desc:'Sabre', prompt:'samurai duel, katana, cherry blossoms.' },
+    { id:'ninja', name:'Ninja', emoji:'🥷', desc:'Ombre', prompt:'ninja stealth, smoke bombs, shurikens.' },
+    { id:'wuxia', name:'Wuxia', emoji:'🍃', desc:'Vol', prompt:'wuxia flying swordsman, bamboo forest.' },
+    { id:'hero-landing', name:'Atterrissage', emoji:'💥', desc:'Super', prompt:'superhero three-point landing, crater.' },
+    { id:'matrix-dodge', name:'Matrix', emoji:'🕶️', desc:'Bullet time', prompt:'Matrix bullet-time dodge.' },
+    { id:'chase', name:'Poursuite', emoji:'🏃', desc:'Urbain', prompt:'high-speed chase, jumping obstacles.' },
+    { id:'gun-fight', name:'Fusillade', emoji:'🔫', desc:'Armes', prompt:'gunfight, muzzle flashes, tactical reload.' },
+    { id:'explosion-walk', name:'Explosion Walk', emoji:'💣', desc:'Badass', prompt:'walking away from explosion, slow-motion.' },
+] },
+{ name: '💃 Danse', effects: [
+    { id:'hiphop', name:'Hip-Hop', emoji:'🎤', desc:'Urbain', prompt:'hip-hop dance, breakdance, freeze poses.' },
+    { id:'ballet', name:'Ballet', emoji:'🩰', desc:'Classique', prompt:'elegant ballet, pirouettes, stage spotlight.' },
+    { id:'kpop', name:'K-Pop', emoji:'🇰🇷', desc:'Coréen', prompt:'K-pop choreography, synchronized group dance.' },
+    { id:'salsa', name:'Salsa', emoji:'💃', desc:'Latino', prompt:'passionate salsa, close embrace, hips.' },
+    { id:'tango', name:'Tango', emoji:'🌹', desc:'Argentin', prompt:'sensual tango, dramatic leg movements.' },
+    { id:'flamenco', name:'Flamenco', emoji:'💃', desc:'Espagnol', prompt:'flamenco, red dress, castanets, stomping.' },
+    { id:'vogue', name:'Vogue', emoji:'💅', desc:'Ballroom', prompt:'vogue dance, ballroom, fierce pose.' },
+    { id:'bollywood', name:'Bollywood', emoji:'🇮🇳', desc:'Indien', prompt:'Bollywood dance, colorful saris.' },
+    { id:'moonwalk', name:'Moonwalk', emoji:'🌙', desc:'MJ', prompt:'moonwalk, backwards glide, Michael Jackson.' },
+    { id:'slow-mo-dance', name:'Slow-Mo Dance', emoji:'🌪️', desc:'Ralenti', prompt:'dance in extreme slow motion.' },
+] },
+{ name: '💥 Pouvoirs', effects: [
+    { id:'explosion', name:'Explosion', emoji:'💥', desc:'Feu', prompt:'massive explosion, fireball, shockwave.' },
+    { id:'super-speed', name:'Super Vitesse', emoji:'⚡', desc:'Flash', prompt:'super speed, motion trails, lightning.' },
+    { id:'telekinesis', name:'Télékinésie', emoji:'🧠', desc:'Mental', prompt:'telekinesis, objects flying, glowing eyes.' },
+    { id:'fireball', name:'Boule de Feu', emoji:'🔥', desc:'Magie', prompt:'magical fireball between hands, flames.' },
+    { id:'lightning', name:'Éclair', emoji:'⚡', desc:'Foudre', prompt:'lightning from hands, electric arcs.' },
+    { id:'ice', name:'Glace', emoji:'❄️', desc:'Givre', prompt:'ice magic, frost crystals, breath visible.' },
+    { id:'teleport', name:'Téléportation', emoji:'✨', desc:'Flash', prompt:'teleportation, smoke flash, reappear.' },
+    { id:'levitation', name:'Lévitation', emoji:'🧘', desc:'Vol', prompt:'levitating, floating cross-legged.' },
+    { id:'transformation', name:'Transformation', emoji:'🐺', desc:'Métamorphose', prompt:'transformation sequence, body morphing.' },
+    { id:'shield', name:'Bouclier', emoji:'🛡️', desc:'Protection', prompt:'magical shield, energy dome, runes.' },
+    { id:'portal', name:'Portail', emoji:'🌀', desc:'Vortex', prompt:'dimensional portal, swirling energy.' },
+    { id:'aura', name:'Aura', emoji:'🌟', desc:'Énergie', prompt:'glowing aura, powering up, ki.' },
+] },
+{ name: '🌪️ Cataclysmes', effects: [
+    { id:'tornado', name:'Tornade', emoji:'🌪️', desc:'Vent', prompt:'tornado, swirling debris, dark sky.' },
+    { id:'tsunami', name:'Tsunami', emoji:'🌊', desc:'Vague', prompt:'giant tsunami, wall of water.' },
+    { id:'earthquake', name:'Séisme', emoji:'🏚️', desc:'Tremblement', prompt:'earthquake, ground cracking, dust.' },
+    { id:'volcano', name:'Volcan', emoji:'🌋', desc:'Lave', prompt:'volcanic eruption, lava, ash clouds.' },
+    { id:'sandstorm', name:'Sable', emoji:'🏜️', desc:'Désert', prompt:'sandstorm wall, orange dust, apocalyptic.' },
+    { id:'blizzard', name:'Blizzard', emoji:'❄️', desc:'Neige', prompt:'blizzard, whiteout, freezing wind.' },
+    { id:'storm', name:'Orage', emoji:'⛈️', desc:'Éclairs', prompt:'thunderstorm, lightning strikes, torrential rain.' },
+    { id:'eclipse', name:'Éclipse', emoji:'🌑', desc:'Soleil noir', prompt:'solar eclipse, corona ring, surreal light.' },
+    { id:'meteor', name:'Météores', emoji:'☄️', desc:'Apocalypse', prompt:'meteor shower, fireballs from sky.' },
+    { id:'fog', name:'Brouillard', emoji:'🌫️', desc:'Brume', prompt:'dense fog, limited visibility, mysterious.' },
+    { id:'wildfire', name:'Incendie', emoji:'🔥', desc:'Feu', prompt:'raging wildfire, burning, embers.' },
+    { id:'flood', name:'Inondation', emoji:'💧', desc:'Eau', prompt:'rising flood, submerged streets.' },
+] },
+{ name: '🏆 Sport', effects: [
+    { id:'football', name:'Football', emoji:'⚽', desc:'But', prompt:'soccer goal, ball hitting net, crowd.' },
+    { id:'basket', name:'Basket', emoji:'🏀', desc:'Dunk', prompt:'basketball slam dunk, hanging on rim.' },
+    { id:'tennis', name:'Tennis', emoji:'🎾', desc:'Smash', prompt:'tennis smash, ball speeding.' },
+    { id:'running', name:'Course', emoji:'🏃', desc:'Sprint', prompt:'sprint finish, sweat flying.' },
+    { id:'swimming', name:'Natation', emoji:'🏊', desc:'Piscine', prompt:'swimming race, perfect stroke, splashing.' },
+    { id:'skate', name:'Skateboard', emoji:'🛹', desc:'Tricks', prompt:'skateboarder landing trick, urban spot.' },
+    { id:'surf', name:'Surf', emoji:'🏄', desc:'Vague', prompt:'surfer riding wave, tube, spray.' },
+    { id:'climbing', name:'Escalade', emoji:'🧗', desc:'Summit', prompt:'rock climber ascending, chalk dust.' },
+    { id:'gym', name:'Gymnastique', emoji:'🤸', desc:'Aerial', prompt:'gymnast aerial flips, perfect landing.' },
+    { id:'f1', name:'Formule 1', emoji:'🏎️', desc:'Course', prompt:'Formula 1 car racing, sparks, pit stop.' },
+    { id:'ski', name:'Ski', emoji:'⛷️', desc:'Neige', prompt:'skier carving powder, spray, mountain.' },
+    { id:'yoga', name:'Yoga', emoji:'🧘', desc:'Posture', prompt:'yoga pose, deep breathing, serene.' },
+] },
+{ name: '🚗 Véhicules', effects: [
+    { id:'sports-car', name:'Voiture Sport', emoji:'🏎️', desc:'Vitesse', prompt:'sports car drifting, tire smoke.' },
+    { id:'moto', name:'Moto', emoji:'🏍️', desc:'Wheelie', prompt:'motorcycle wheelie, leaning into corner.' },
+    { id:'plane', name:'Avion', emoji:'✈️', desc:'Vol', prompt:'airplane taking off, into clouds.' },
+    { id:'helico', name:'Hélico', emoji:'🚁', desc:'Survol', prompt:'helicopter hovering, rotor blur.' },
+    { id:'boat', name:'Bateau', emoji:'🚤', desc:'Eau', prompt:'speedboat cutting waves, spray.' },
+    { id:'train', name:'Train', emoji:'🚂', desc:'Vapeur', prompt:'steam train, whistle, smoke, tracks.' },
+    { id:'robot', name:'Robot', emoji:'🤖', desc:'Mecha', prompt:'giant robot walking, mechanical joints.' },
+    { id:'spaceship', name:'Vaisseau', emoji:'🚀', desc:'Fusée', prompt:'spaceship launch, thrusters, stars.' },
+    { id:'drone', name:'Drone', emoji:'🛸', desc:'Aérien', prompt:'drone hovering, propellers spinning.' },
+    { id:'tank', name:'Tank', emoji:'🛡️', desc:'Militaire', prompt:'tank rolling, treads, turret.' },
+] },
+{ name: '🎭 Émotions', effects: [
+    { id:'joy', name:'Joie', emoji:'😊', desc:'Bonheur', prompt:'joy, wide smile, sparkling eyes.' },
+    { id:'sadness', name:'Tristesse', emoji:'😢', desc:'Larme', prompt:'sadness, single tear, downturned gaze.' },
+    { id:'anger', name:'Colère', emoji:'😠', desc:'Rage', prompt:'anger, clenched fists, red glow.' },
+    { id:'fear', name:'Peur', emoji:'😨', desc:'Terreur', prompt:'fear, wide eyes, trembling, shadows.' },
+    { id:'surprise', name:'Surprise', emoji:'😲', desc:'Étonnement', prompt:'surprise, eyes wide, jolt backward.' },
+    { id:'love', name:'Amour', emoji:'❤️', desc:'Romance', prompt:'tender love, warm gaze, hearts.' },
+    { id:'nostalgia', name:'Nostalgie', emoji:'📷', desc:'Souvenir', prompt:'nostalgia, sepia, soft focus, faded.' },
+    { id:'madness', name:'Folie', emoji:'🤪', desc:'Chaos', prompt:'madness, unstable grin, distorted reality.' },
+    { id:'serenity', name:'Sérénité', emoji:'😌', desc:'Paix', prompt:'serenity, slow breathing, eyes closing.' },
+    { id:'pride', name:'Fierté', emoji:'🦁', desc:'Force', prompt:'pride, chin up, eyes shining, quiet power.' },
+] },
+{ name: '🎮 Gaming', effects: [
+    { id:'lets-play', name:'Let\'s Play', emoji:'🎮', desc:'Stream', prompt:'gaming setup, RGB keyboard, headset, reactions.' },
+    { id:'cinematic-game', name:'Cinématique AAA', emoji:'🎬', desc:'Intro', prompt:'AAA video game cinematic, epic, hero pose.' },
+    { id:'rpg', name:'Personnage RPG', emoji:'🧙', desc:'Fiche', prompt:'RPG character portrait, stats panel, equipment.' },
+    { id:'game-card', name:'Carte TCG', emoji:'🃏', desc:'Holo', prompt:'trading card, holo effect, rarity glow.' },
+    { id:'stream-overlay', name:'Overlay Stream', emoji:'📺', desc:'Twitch', prompt:'streaming overlay, alerts, chat scrolling.' },
+    { id:'vtuber', name:'VTuber', emoji:'👧', desc:'Avatar', prompt:'VTuber avatar moving, expressive face rigging.' },
+    { id:'minecraft', name:'Voxel', emoji:'⛏️', desc:'Cubes', prompt:'Minecraft voxel world, blocky terrain.' },
+    { id:'low-poly', name:'Low Poly', emoji:'🔺', desc:'Indé', prompt:'low poly indie game, faceted shapes.' },
+    { id:'ar', name:'AR', emoji:'📱', desc:'Réalité aug.', prompt:'augmented reality, 3D object in real world.' },
+    { id:'vr', name:'VR', emoji:'🥽', desc:'Virtuelle', prompt:'virtual reality immersion, VR headset.' },
+    { id:'arcade', name:'Arcade', emoji:'🕹️', desc:'Rétro', prompt:'retro arcade, CRT scanlines, 80s.' },
+    { id:'esport', name:'E-sport', emoji:'🏆', desc:'Tournoi', prompt:'esport tournament, arena stage, crowd.' },
+] },
+{ name: '🎵 Musique', effects: [
+    { id:'rap-clip', name:'Rap', emoji:'🎤', desc:'Urbain', prompt:'rap video, urban, gold chains, hood.' },
+    { id:'pop-clip', name:'Pop', emoji:'💖', desc:'Couleurs', prompt:'pop video, bright colors, confetti, dancers.' },
+    { id:'rock-clip', name:'Rock', emoji:'🎸', desc:'Scène', prompt:'rock video, guitar solo, smoke, stage lights.' },
+    { id:'electro-clip', name:'Électro', emoji:'🎧', desc:'DJ', prompt:'electronic video, DJ, lasers, crowd.' },
+    { id:'jazz-clip', name:'Jazz', emoji:'🎷', desc:'Club', prompt:'jazz club, saxophone, dim lighting, smoke.' },
+    { id:'classical-clip', name:'Classique', emoji:'🎻', desc:'Orchestre', prompt:'orchestra, conductor, concert hall.' },
+    { id:'reggaeton', name:'Reggaeton', emoji:'🏖️', desc:'Latino', prompt:'reggaeton video, tropical beach, dancing.' },
+    { id:'metal-clip', name:'Metal', emoji:'🤘', desc:'Intense', prompt:'metal video, dark stage, fire, headbanging.' },
+    { id:'lofi', name:'Lo-Fi', emoji:'📻', desc:'Chill', prompt:'lo-fi, anime style, rainy window, chill.' },
+    { id:'kpop-clip', name:'K-Pop', emoji:'🇰🇷', desc:'Idol', prompt:'K-pop video, sync choreo, idol fashion.' },
+] },
+{ name: '📚 Éducation', effects: [
+    { id:'science', name:'Science', emoji:'🔬', desc:'Pédagogie', prompt:'scientific explanation, animated diagram, particles.' },
+    { id:'history', name:'Histoire', emoji:'📜', desc:'Reconstitution', prompt:'historical reenactment, period costumes.' },
+    { id:'geo', name:'Géographie', emoji:'🗺️', desc:'Carte', prompt:'animated map, 3D terrain, borders.' },
+    { id:'math', name:'Maths', emoji:'➗', desc:'Formules', prompt:'animated formulas, geometry, equations.' },
+    { id:'langues', name:'Langues', emoji:'🗣️', desc:'Mots', prompt:'language learning visual, word illustrated.' },
+    { id:'cooking', name:'Cuisine', emoji:'🍳', desc:'Recette', prompt:'cooking tutorial, ingredients, sizzling pan.' },
+    { id:'diy', name:'Bricolage', emoji:'🔨', desc:'Tutoriel', prompt:'DIY tutorial, hands working, tools.' },
+    { id:'medical', name:'Médical', emoji:'⚕️', desc:'Anatomie', prompt:'medical animation, anatomy, circulation.' },
+    { id:'astro', name:'Astronomie', emoji:'🔭', desc:'Espace', prompt:'astronomy, planets orbiting, galaxies.' },
+    { id:'nature-doc', name:'Nature', emoji:'🦁', desc:'Animal', prompt:'nature documentary, wildlife, BBC Earth.' },
+] },
+{ name: '🏢 Business', effects: [
+    { id:'product', name:'Produit', emoji:'📦', desc:'Rotation', prompt:'product showcase, 360 rotation, features.' },
+    { id:'testimonial', name:'Témoignage', emoji:'💬', desc:'Client', prompt:'customer testimonial, quote overlay.' },
+    { id:'corporate', name:'Annonce', emoji:'📢', desc:'Officiel', prompt:'corporate announcement, logo animation.' },
+    { id:'recruitment', name:'Recrutement', emoji:'👥', desc:'Emploi', prompt:'recruitment video, team, positive culture.' },
+    { id:'training', name:'Formation', emoji:'🎓', desc:'Interne', prompt:'corporate training, slides, key points.' },
+    { id:'annual-report', name:'Rapport', emoji:'📊', desc:'Chiffres', prompt:'annual report animation, charts growing.' },
+    { id:'real-estate', name:'Immobilier', emoji:'🏠', desc:'Visite', prompt:'real estate tour, rooms, floor plan.' },
+    { id:'restaurant', name:'Restaurant', emoji:'🍽️', desc:'Plat', prompt:'restaurant, plated dish, warm ambience.' },
+    { id:'hotel', name:'Hôtel', emoji:'🏨', desc:'Séjour', prompt:'hotel showcase, room, pool, view.' },
+    { id:'pitch', name:'Pitch', emoji:'🚀', desc:'Startup', prompt:'startup pitch, energetic, problem-solution.' },
+] },
+{ name: '🌍 Voyage', effects: [
+    { id:'postcard', name:'Carte Postale', emoji:'📮', desc:'Souvenir', prompt:'animated postcard, landmark, travel.' },
+    { id:'road-trip', name:'Road Trip', emoji:'🚗', desc:'Route', prompt:'road trip, open highway, freedom.' },
+    { id:'cruise', name:'Croisière', emoji:'🛳️', desc:'Mer', prompt:'cruise ship, ocean view, deck.' },
+    { id:'safari', name:'Safari', emoji:'🦒', desc:'Afrique', prompt:'safari, savanna, wild animals, sunset.' },
+    { id:'mountain', name:'Montagne', emoji:'🏔️', desc:'Sommet', prompt:'mountain, summit, panoramic, alpine.' },
+    { id:'beach', name:'Plage', emoji:'🏝️', desc:'Tropical', prompt:'paradise beach, turquoise, palm trees.' },
+    { id:'night-city', name:'Ville Nuit', emoji:'🌃', desc:'Urbain', prompt:'city at night, skyscrapers, traffic.' },
+    { id:'village', name:'Village', emoji:'🏘️', desc:'Charme', prompt:'traditional village, cobblestone, crafts.' },
+] },
+{ name: '🕰️ Histoire', effects: [
+    { id:'prehistoric', name:'Préhistoire', emoji:'🦕', desc:'Dinos', prompt:'prehistoric, dinosaurs, volcanoes.' },
+    { id:'egypt', name:'Égypte', emoji:'🐫', desc:'Pharaons', prompt:'ancient Egypt, pyramids, hieroglyphs.' },
+    { id:'greece', name:'Grèce', emoji:'🏛️', desc:'Antique', prompt:'ancient Greece, marble temples, philosophy.' },
+    { id:'rome', name:'Rome', emoji:'🏛️', desc:'Empire', prompt:'ancient Rome, Colosseum, legions.' },
+    { id:'medieval', name:'Médiéval', emoji:'⚔️', desc:'Chevaliers', prompt:'medieval, castle, knights, tournament.' },
+    { id:'renaissance', name:'Renaissance', emoji:'🎨', desc:'Art', prompt:'Renaissance, art, invention, Florence.' },
+    { id:'1920s', name:'Années 1920', emoji:'🎷', desc:'Jazz', prompt:'1920s Jazz Age, flappers, Art Deco.' },
+    { id:'1980s', name:'Années 1980', emoji:'📼', desc:'Néons', prompt:'1980s, neon, VHS, synthwave, arcade.' },
+    { id:'future', name:'Futur 2100', emoji:'🛸', desc:'High-tech', prompt:'futuristic city, flying cars, AI, robots.' },
+] },
+{ name: '🧠 Illusions', effects: [
+    { id:'trompe', name:'Trompe-l\'œil', emoji:'🎭', desc:'Sort du cadre', prompt:'trompe-l\'œil, subject breaking out of frame.' },
+    { id:'anamorph', name:'Anamorphose', emoji:'🔺', desc:'Angle', prompt:'anamorphic distortion, visible from angle.' },
+    { id:'escher', name:'Escher', emoji:'🪜', desc:'Impossible', prompt:'Escher impossible architecture, endless stairs.' },
+    { id:'optical-motion', name:'Illusion', emoji:'🌀', desc:'Mouvement', prompt:'optical illusion of motion, hypnotic.' },
+    { id:'forced', name:'Forced Perspective', emoji:'📐', desc:'Taille', prompt:'forced perspective, size distortion.' },
+    { id:'mirror', name:'Miroir Infini', emoji:'🪞', desc:'Reflets', prompt:'infinite mirror reflection, mise en abyme.' },
+] },
+{ name: '📱 Social', effects: [
+    { id:'tiktok-hook', name:'TikTok Hook', emoji:'🎯', desc:'3s', prompt:'TikTok hook, attention-grabbing opening.' },
+    { id:'reel-transition', name:'Reel Transition', emoji:'🔄', desc:'Viral', prompt:'viral reel transition, trending style.' },
+    { id:'yt-intro', name:'YouTube Intro', emoji:'📺', desc:'Logo', prompt:'YouTube intro, animated logo, music.' },
+    { id:'short-loop', name:'Short Loop', emoji:'🚀', desc:'Boucle', prompt:'viral short loop, seamless, trending.' },
+    { id:'ig-story', name:'Story Instagram', emoji:'📸', desc:'Story', prompt:'Instagram story, interactive, polls.' },
+    { id:'podcast', name:'Podcast', emoji:'🎙️', desc:'Waveform', prompt:'podcast visual, waveform, quote card.' },
+    { id:'before-after', name:'Before / After', emoji:'🔀', desc:'Transform', prompt:'before and after comparison, split screen.' },
+    { id:'unboxing', name:'Unboxing', emoji:'📦', desc:'Déballage', prompt:'product unboxing, hands opening box.' },
+] },
+{ name: '🧬 Sciences', effects: [
+    { id:'dna', name:'ADN', emoji:'🧬', desc:'Hélice', prompt:'DNA double helix rotating, genetic code.' },
+    { id:'cell', name:'Cellule', emoji:'🔬', desc:'Mitose', prompt:'cell biology, mitosis, organelles.' },
+    { id:'brain', name:'Cerveau', emoji:'🧠', desc:'Neurones', prompt:'brain activity, neurons firing, synapses.' },
+    { id:'space', name:'Espace', emoji:'🌌', desc:'Galaxie', prompt:'space, galaxy rotating, black hole, nebula.' },
+    { id:'robotics', name:'Robotique', emoji:'🤖', desc:'Bras', prompt:'robotic arm moving, precise mechanics.' },
+    { id:'quantum', name:'Quantique', emoji:'⚛️', desc:'Particules', prompt:'quantum, particles, superposition, wave.' },
+    { id:'post-apo', name:'Post-Apo', emoji:'☢️', desc:'Ruines', prompt:'post-apocalyptic, ruins, overgrown.' },
+] },
+{ name: '🧙 Fantastique', effects: [
+    { id:'dragon', name:'Dragon', emoji:'🐉', desc:'Créature', prompt:'dragon flying, wings, fire, scales.' },
+    { id:'unicorn', name:'Licorne', emoji:'🦄', desc:'Magique', prompt:'unicorn, enchanted forest, rainbow.' },
+    { id:'mermaid', name:'Sirène', emoji:'🧜', desc:'Océan', prompt:'mermaid underwater, shimmering tail.' },
+    { id:'phoenix', name:'Phénix', emoji:'🔥', desc:'Renaissance', prompt:'phoenix rising from flames, rebirth.' },
+    { id:'werewolf', name:'Loup-garou', emoji:'🐺', desc:'Transfo', prompt:'werewolf transformation, full moon.' },
+    { id:'vampire', name:'Vampire', emoji:'🧛', desc:'Nuit', prompt:'vampire, gothic castle, red eyes, fangs.' },
+    { id:'ghost', name:'Fantôme', emoji:'👻', desc:'Apparition', prompt:'ghostly apparition, translucent figure.' },
+    { id:'fairy', name:'Fée', emoji:'🧚', desc:'Petit peuple', prompt:'fairy, delicate wings, glowing, forest.' },
+] },
+{ name: '🎬 Genres', effects: [
+    { id:'western', name:'Western', emoji:'🤠', desc:'Far West', prompt:'western, dusty town, revolver duel, sunset.' },
+    { id:'polar', name:'Polar', emoji:'🕵️', desc:'Enquête', prompt:'detective, rain, trench coat, mystery.' },
+    { id:'horror', name:'Horreur', emoji:'👻', desc:'Frayeur', prompt:'horror, dark shadows, tension, jump scare.' },
+    { id:'comedy', name:'Comédie', emoji:'😂', desc:'Humour', prompt:'comedy, funny expression, timing.' },
+    { id:'romance', name:'Romance', emoji:'💕', desc:'Amour', prompt:'romance, intimate moment, soft light.' },
+    { id:'sci-fi', name:'Sci-Fi', emoji:'🛸', desc:'Futur', prompt:'science fiction, futuristic tech, space.' },
+    { id:'fantasy', name:'Fantasy', emoji:'🐉', desc:'Magie', prompt:'fantasy epic, magic, quest, mythical.' },
+    { id:'thriller', name:'Thriller', emoji:'😰', desc:'Suspense', prompt:'thriller, tension, chase, plot twist.' },
+    { id:'noir', name:'Film Noir', emoji:'🌧️', desc:'1940s', prompt:'film noir, rain, femme fatale, smoke.' },
+    { id:'war', name:'Guerre', emoji:'⚔️', desc:'Bataille', prompt:'war movie, battlefield, soldiers, tension.' },
+] },
+{ name: '👤 Portraits', effects: [
+    { id:'living-portrait', name:'Portrait Vivant', emoji:'🖼️', desc:'Respire', prompt:'living portrait, breathing, blinking, micro.' },
+    { id:'talking-head', name:'Tête Parlante', emoji:'🗣️', desc:'Lip sync', prompt:'talking head, lip sync, mouth moving.' },
+    { id:'avatar', name:'Avatar', emoji:'🧑‍🎨', desc:'Stilisé', prompt:'stylized avatar, cartoon or 3D.' },
+    { id:'aging', name:'Vieillissement', emoji:'👴', desc:'Âge', prompt:'aging time-lapse, wrinkles forming.' },
+    { id:'de-aging', name:'Rajeunissement', emoji:'👶', desc:'Jeune', prompt:'de-aging, becoming younger, smooth skin.' },
+    { id:'makeup', name:'Maquillage', emoji:'💄', desc:'Beauté', prompt:'makeup transformation, cosmetics applied.' },
+    { id:'hair', name:'Coiffure', emoji:'💇', desc:'Cheveux', prompt:'hair transformation, color shift, flowing.' },
+    { id:'outfit', name:'Tenue', emoji:'👗', desc:'Mode', prompt:'outfit change, clothing transforming.' },
+] },
+{ name: '🏠 Quotidien', effects: [
+    { id:'morning', name:'Routine Matin', emoji:'☕', desc:'Réveil', prompt:'morning routine, coffee, sunrise light.' },
+    { id:'cooking-home', name:'Cuisine', emoji:'🍳', desc:'Plat', prompt:'home cooking, sizzling, cozy kitchen.' },
+    { id:'pet', name:'Animal', emoji:'🐶', desc:'Cute', prompt:'pet playing, tail wagging, joyful.' },
+    { id:'kids', name:'Enfants', emoji:'🧒', desc:'Jeu', prompt:'children playing, laughter, joyful.' },
+    { id:'family', name:'Dîner Famille', emoji:'🍽️', desc:'Partage', prompt:'family dinner, warm light, laughter.' },
+    { id:'gardening', name:'Jardinage', emoji:'🌱', desc:'Plantes', prompt:'gardening, hands in soil, plants growing.' },
+    { id:'reading', name:'Lecture', emoji:'📖', desc:'Livre', prompt:'reading, turning pages, cozy atmosphere.' },
+    { id:'relax', name:'Détente', emoji:'🛁', desc:'Spa', prompt:'relaxation, spa, candles, calm.' },
+    { id:'meditation', name:'Méditation', emoji:'🧘', desc:'Zen', prompt:'meditation, deep breathing, zen.' },
+    { id:'rain-window', name:'Pluie', emoji:'🌧️', desc:'Mélancolie', prompt:'rain on window, cozy, drops racing.' },
+] },
+{ name: '🐾 Animaux', effects: [
+    { id:'cat', name:'Chat', emoji:'🐱', desc:'Félin', prompt:'cat, graceful, tail flicking, whiskers.' },
+    { id:'dog', name:'Chien', emoji:'🐶', desc:'Canin', prompt:'dog running, tongue out, tail wagging.' },
+    { id:'horse', name:'Cheval', emoji:'🐴', desc:'Galop', prompt:'horse galloping, mane flowing.' },
+    { id:'eagle', name:'Aigle', emoji:'🦅', desc:'Vol', prompt:'eagle soaring, wings spread, sharp eyes.' },
+    { id:'wolf', name:'Loup', emoji:'🐺', desc:'Meute', prompt:'wolf pack, snowy forest, howling.' },
+    { id:'lion', name:'Lion', emoji:'🦁', desc:'Roi', prompt:'lion, king, powerful roar, mane.' },
+    { id:'dolphin', name:'Dauphin', emoji:'🐬', desc:'Océan', prompt:'dolphins jumping, ocean spray.' },
+    { id:'butterfly', name:'Papillon', emoji:'🦋', desc:'Léger', prompt:'butterfly emerging from cocoon, wings.' },
+] },
+{ name: '🍽️ Cuisine', effects: [
+    { id:'recipe', name:'Recette', emoji:'📖', desc:'Étapes', prompt:'cooking recipe, ingredients, final dish.' },
+    { id:'food-porn', name:'Food Porn', emoji:'🍔', desc:'Appétissant', prompt:'appetizing, cheese melting, sauce dripping.' },
+    { id:'steam', name:'Vapeur', emoji:'♨️', desc:'Chaud', prompt:'steam rising from hot dish, fresh.' },
+    { id:'cocktail', name:'Cocktail', emoji:'🍸', desc:'Bar', prompt:'cocktail, shaking, pouring, garnish.' },
+    { id:'coffee', name:'Café', emoji:'☕', desc:'Barista', prompt:'coffee brewing, espresso pour, latte art.' },
+    { id:'pizza', name:'Pizza', emoji:'🍕', desc:'Italien', prompt:'pizza making, dough tossed, cheese stretch.' },
+    { id:'sushi', name:'Sushi', emoji:'🍣', desc:'Japonais', prompt:'sushi, knife skills, fresh fish, plating.' },
+    { id:'pastry', name:'Pâtisserie', emoji:'🥐', desc:'Sucré', prompt:'pastry chef, croissant, chocolate work.' },
+] },
+{ name: '👗 Mode', effects: [
+    { id:'runway', name:'Défilé', emoji:'👠', desc:'Runway', prompt:'fashion runway, model, flashbulbs.' },
+    { id:'lookbook', name:'Lookbook', emoji:'📸', desc:'Collection', prompt:'fashion lookbook, outfit changes.' },
+    { id:'photoshoot', name:'Shooting', emoji:'📷', desc:'Studio', prompt:'fashion photoshoot, studio lights.' },
+    { id:'makeup-tuto', name:'Tuto Maquillage', emoji:'💄', desc:'Beauty', prompt:'makeup tutorial, cosmetics, transformation.' },
+    { id:'skincare', name:'Soin', emoji:'🧴', desc:'Skincare', prompt:'skincare routine, serums, glowing skin.' },
+    { id:'jewelry', name:'Bijoux', emoji:'💎', desc:'Luxe', prompt:'jewelry, diamonds sparkling, gold glinting.' },
+    { id:'perfume', name:'Parfum', emoji:'🌸', desc:'Fragrance', prompt:'perfume bottle, mist spraying, elegant.' },
+    { id:'streetwear', name:'Streetwear', emoji:'🧢', desc:'Urbain', prompt:'streetwear, urban backdrop, sneakers.' },
+] },
+{ name: '🌌 Cosmos', effects: [
+    { id:'galaxy', name:'Galaxie', emoji:'🌌', desc:'Spirale', prompt:'galaxy rotating, spiral arms, stars.' },
+    { id:'black-hole', name:'Trou Noir', emoji:'🕳️', desc:'Singularité', prompt:'black hole, accretion disk, event horizon.' },
+    { id:'nebula', name:'Nébuleuse', emoji:'✨', desc:'Nuage', prompt:'colorful nebula, stellar nursery.' },
+    { id:'supernova', name:'Supernova', emoji:'💥', desc:'Explosion', prompt:'supernova, star dying, massive energy.' },
+    { id:'wormhole', name:'Trou de Ver', emoji:'🌀', desc:'Voyage', prompt:'wormhole, tunnel through spacetime.' },
+    { id:'alien', name:'Monde Alien', emoji:'👽', desc:'Exoplanète', prompt:'alien world, strange sky, multiple moons.' },
+    { id:'solar', name:'Système Solaire', emoji:'☀️', desc:'Planètes', prompt:'solar system, planets orbiting sun.' },
+] },
+{ name: '🏙️ Urban', effects: [
+    { id:'city', name:'Vie Urbaine', emoji:'🌆', desc:'Ville', prompt:'city life, busy streets, traffic.' },
+    { id:'graffiti', name:'Graffiti', emoji:'🎨', desc:'Street', prompt:'graffiti art, spray paint, urban walls.' },
+    { id:'skate-park', name:'Skate Park', emoji:'🛹', desc:'Culture', prompt:'skate park, tricks, ramps, community.' },
+    { id:'busker', name:'Musique Rue', emoji:'🎸', desc:'Busker', prompt:'street musician, busking, passersby.' },
+    { id:'night-market', name:'Marché Nuit', emoji:'🏮', desc:'Asie', prompt:'night market, lanterns, street food.' },
+    { id:'subway', name:'Métro', emoji:'🚇', desc:'Souterrain', prompt:'subway station, trains, commuters.' },
+    { id:'rooftop', name:'Rooftop', emoji:'🏙️', desc:'Vue', prompt:'rooftop, city skyline, sunset.' },
+    { id:'alley', name:'Ruelle', emoji:'🚪', desc:'Sombre', prompt:'dark alley, neon, moody, mystery.' },
+] },
+{ name: '🖌️ Art', effects: [
+    { id:'brushstrokes', name:'Pinceau', emoji:'🖌️', desc:'Peinture', prompt:'painting coming alive, brushstrokes moving.' },
+    { id:'sketch-color', name:'Croquis→Couleur', emoji:'✏️', desc:'Transfo', prompt:'sketch transforming into full color artwork.' },
+    { id:'digital-art', name:'Art Digital', emoji:'💻', desc:'Numérique', prompt:'digital art creation, stylus, layers.' },
+    { id:'sculpture', name:'Sculpture', emoji:'🗿', desc:'3D', prompt:'sculpture, chisel on stone, form emerging.' },
+    { id:'pottery', name:'Poterie', emoji:'🏺', desc:'Argile', prompt:'pottery, wheel spinning, hands molding.' },
+    { id:'calligraphy', name:'Calligraphie', emoji:'🖋️', desc:'Écriture', prompt:'calligraphy, brush strokes, ink flowing.' },
+] },
+{ name: '⏱️ Temps', effects: [
+    { id:'time-stop', name:'Arrêt', emoji:'⏸️', desc:'Gel', prompt:'time stops, everything frozen, subject moves.' },
+    { id:'reverse', name:'Inversé', emoji:'⏪', desc:'Reverse', prompt:'reverse time, actions running backward.' },
+    { id:'timelapse', name:'Timelapse', emoji:'⏩', desc:'Rapide', prompt:'time-lapse, hours compressed, day-night.' },
+    { id:'hyperlapse', name:'Hyperlapse', emoji:'🚶', desc:'Mouvement', prompt:'hyperlapse, camera moving, time compressed.' },
+    { id:'slowmo', name:'Ralenti', emoji:'🐌', desc:'Précis', prompt:'extreme slow motion, thousands of frames.' },
+    { id:'freeze', name:'Freeze Frame', emoji:'❄️', desc:'Gel', prompt:'dramatic freeze frame, action paused.' },
+] },
+{ name: '🌄 Nature', effects: [
+    { id:'mountains', name:'Montagnes', emoji:'🏔️', desc:'Sommets', prompt:'mountain range, snowy peaks, clouds.' },
+    { id:'ocean', name:'Océan', emoji:'🌊', desc:'Vagues', prompt:'ocean waves crashing, foam, sunset.' },
+    { id:'forest', name:'Forêt', emoji:'🌲', desc:'Arbres', prompt:'forest, trees swaying, sunbeams, birds.' },
+    { id:'desert', name:'Désert', emoji:'🏜️', desc:'Sable', prompt:'desert dunes, heat waves, sand shifting.' },
+    { id:'waterfall', name:'Cascade', emoji:'💧', desc:'Eau', prompt:'waterfall, cascading, mist, rainbow.' },
+    { id:'lake', name:'Lac', emoji:'🏞️', desc:'Calme', prompt:'calm lake, still water, mirror reflection.' },
+    { id:'flowers', name:'Fleurs', emoji:'🌷', desc:'Fleuri', prompt:'flower field, blossoms swaying, spring.' },
+    { id:'autumn', name:'Automne', emoji:'🍂', desc:'Feuilles', prompt:'autumn forest, leaves falling, orange.' },
+] },
+{ name: '🏛️ Architecture', effects: [
+    { id:'modern', name:'Moderne', emoji:'🏢', desc:'Contemporain', prompt:'modern architecture, glass and steel.' },
+    { id:'gothic', name:'Gothique', emoji:'⛪', desc:'Cathédrale', prompt:'gothic cathedral, pointed arches, stained glass.' },
+    { id:'ruins', name:'Ruines', emoji:'🏚️', desc:'Ancien', prompt:'ancient ruins, crumbling walls, overgrowth.' },
+    { id:'skyscraper', name:'Gratte-ciel', emoji:'🏙️', desc:'Vertige', prompt:'skyscraper, looking up, glass reflection.' },
+    { id:'futuristic', name:'Futuriste', emoji:'🛸', desc:'Futur', prompt:'futuristic architecture, organic curves.' },
+    { id:'interior', name:'Intérieur', emoji:'🛋️', desc:'Design', prompt:'interior design, stylish space, decor.' },
+] },
+{ name: '🪂 Sports Extrêmes', effects: [
+    { id:'skydive', name:'Chute Libre', emoji:'🪂', desc:'Adrénaline', prompt:'skydiving, free fall, wind, clouds below.' },
+    { id:'basejump', name:'Base Jump', emoji:'🏔️', desc:'Saut', prompt:'BASE jump, leaping off cliff, wingsuit.' },
+    { id:'bmx', name:'BMX', emoji:'🚲', desc:'Tricks', prompt:'BMX, ramp jump, mid-air stunt.' },
+    { id:'motocross', name:'Motocross', emoji:'🏍️', desc:'Dirt', prompt:'motocross, dirt bike jumping, mud.' },
+    { id:'wingsuit', name:'Wingsuit', emoji:'🦅', desc:'Vol', prompt:'wingsuit flying, gliding through canyons.' },
+    { id:'kitesurf', name:'Kitesurf', emoji:'🪁', desc:'Vent', prompt:'kitesurfing, kite pulling, waves.' },
+] },
+{ name: '📢 Publicité', effects: [
+    { id:'brand', name:'Marque', emoji:'🏷️', desc:'Branding', prompt:'brand advertising, logo reveal, brand colors.' },
+    { id:'luxury', name:'Luxe', emoji:'💎', desc:'Prestige', prompt:'luxury ad, elegant, gold, precious.' },
+    { id:'tech-ad', name:'Tech', emoji:'📱', desc:'High-tech', prompt:'tech product ad, sleek device, interface.' },
+    { id:'food-ad', name:'Alimentaire', emoji:'🍫', desc:'Gourmand', prompt:'food commercial, appetizing close-up.' },
+    { id:'perfume-ad', name:'Parfum', emoji:'🌸', desc:'Sensuel', prompt:'perfume commercial, mysterious, sensual.' },
+    { id:'car-ad', name:'Auto', emoji:'🚗', desc:'Puissance', prompt:'car commercial, winding road, speed.' },
+] },
+{ name: '💪 Fitness', effects: [
+    { id:'workout', name:'Workout', emoji:'🏋️', desc:'Entraînement', prompt:'workout, gym, weights, sweat, effort.' },
+    { id:'bodybuild', name:'Musculation', emoji:'💪', desc:'Force', prompt:'bodybuilding, muscle flex, training.' },
+    { id:'crossfit', name:'CrossFit', emoji:'🏋️‍♀️', desc:'Intense', prompt:'CrossFit, box jumps, burpees, intense.' },
+    { id:'martial', name:'Arts Martiaux', emoji:'🥋', desc:'Discipline', prompt:'martial arts, kata, discipline, focus.' },
+    { id:'dance-fit', name:'Danse Fitness', emoji:'💃', desc:'Cardio', prompt:'dance fitness, energetic, group class.' },
+    { id:'power-yoga', name:'Power Yoga', emoji:'🧘‍♂️', desc:'Force', prompt:'power yoga, strong poses, breath.' },
+] },
+{ name: '⚔️ Médiéval', effects: [
+    { id:'castle', name:'Château', emoji:'🏰', desc:'Forteresse', prompt:'medieval castle, towers, banners.' },
+    { id:'knight', name:'Chevalier', emoji:'🛡️', desc:'Armure', prompt:'knight in armor, sword, banners, chivalry.' },
+    { id:'wizard', name:'Magicien', emoji:'🧙‍♂️', desc:'Magie', prompt:'wizard, staff glowing, magical runes.' },
+    { id:'elf-forest', name:'Forêt Elfique', emoji:'🌳', desc:'Enchantée', prompt:'elven forest, ancient trees, magic light.' },
+    { id:'dwarf', name:'Mine Naine', emoji:'⛏️', desc:'Souterrain', prompt:'dwarven mine, tunnels, gold, forges.' },
+    { id:'dark-lord', name:'Seigneur Noir', emoji:'👑', desc:'Vilain', prompt:'dark lord, menacing, black armor, evil.' },
+] },
+{ name: '😂 Comédie', effects: [
+    { id:'slapstick', name:'Slapstick', emoji:'🤡', desc:'Burlesque', prompt:'slapstick comedy, exaggerated fall, timing.' },
+    { id:'pratfall', name:'Chute', emoji:'💫', desc:'Comique', prompt:'comedic pratfall, tripping, cartoonish.' },
+    { id:'reaction', name:'Réaction', emoji:'😱', desc:'Surprise', prompt:'comedic reaction, exaggerated surprise.' },
+    { id:'meme-face', name:'Mème Visage', emoji:'😜', desc:'Expression', prompt:'meme face, exaggerated expression.' },
+    { id:'fail', name:'Fail', emoji:'🤦', desc:'Raté', prompt:'funny fail, epic fail, comedic disaster.' },
+    { id:'parody', name:'Parodie', emoji:'🎬', desc:'Détournement', prompt:'parody, spoof, comedic imitation.' },
+] },
+{ name: '🧘 Spirituel', effects: [
+    { id:'chakra', name:'Chakras', emoji:'🕉️', desc:'Énergie', prompt:'chakra alignment, energy centers, awakening.' },
+    { id:'aura-read', name:'Aura', emoji:'🌈', desc:'Énergie', prompt:'aura visible, colored energy field.' },
+    { id:'mandala', name:'Mandala', emoji:'🌀', desc:'Sacré', prompt:'mandala rotating, sacred geometry.' },
+    { id:'temple', name:'Temple', emoji:'⛩️', desc:'Sacré', prompt:'sacred temple, incense, monks, spiritual.' },
+    { id:'astral', name:'Voyage Astral', emoji:'✨', desc:'Projection', prompt:'astral projection, spirit leaving body.' },
+    { id:'crystal', name:'Cristaux', emoji:'💎', desc:'Énergie', prompt:'crystals glowing, healing energy.' },
+] },
+{ name: '👥 Foules', effects: [
+    { id:'crowd', name:'Foule', emoji:'👥', desc:'Masse', prompt:'massive crowd, sea of people, energy.' },
+    { id:'concert', name:'Concert', emoji:'🎤', desc:'Public', prompt:'concert crowd, hands raised, lights.' },
+    { id:'protest', name:'Manifestation', emoji:'✊', desc:'Mouvement', prompt:'protest march, signs, chants, passion.' },
+    { id:'flashmob', name:'Flash Mob', emoji:'🎭', desc:'Surprise', prompt:'flash mob, coordinated dance, surprised.' },
+    { id:'stadium', name:'Stade', emoji:'🏟️', desc:'Sport', prompt:'stadium, wave, cheering, sports passion.' },
+    { id:'festival', name:'Festival', emoji:'🎪', desc:'Culture', prompt:'festival, stages, crowds, celebration.' },
+] },
+];
+const ALL_EFFECTS = CATEGORIES.flatMap(c => c.effects);
+
+// ══════════════════════════════════════════════════════════════════
+// MOUVEMENTS
+// ══════════════════════════════════════════════════════════════════
+const RANDOM_ACTIONS = [
+    'the subject slowly moves forward, breathing softly',
+    'subtle motion, camera drifts gently through the scene',
+    'slow contemplative movement, gentle ambient change',
+];
+const RANDOM_CAMERA = [
+    'slow dolly forward, camera gliding gently',
+    'smooth steadicam tracking, fluid motion',
+    'slow lateral movement revealing depth',
+];
+const RANDOM_LIGHTING = [
+    'soft diffused natural light, gently shifting',
+    'warm golden hour backlight, changing slowly',
+    'ambient glow, softly evolving',
+];
+const INTENSITY_PRESETS = {
+    subtle: 'very subtle movement, barely perceptible change',
+    moderate: 'moderate movement, clear but controlled',
+    strong: 'strong dynamic movement, energetic',
+};
+const FRAMING_PRESETS = {
+    close: 'extreme close-up framing',
+    medium: 'medium shot framing',
+    wide: 'wide shot framing',
+};
+
+// ══════════════════════════════════════════════════════════════════
+// ÉTAT
+// ══════════════════════════════════════════════════════════════════
+const state = {
+    image: null,
+    isRunning: false,
+    stopRequested: false,
+    completed: 0,
+    failed: 0,
+    selectedEffect: null,
+    mainPrompt: '',
+    framing: 'random',
+    intensity: 'random',
+    totalSeconds: 30,
+    totalSegments: 6,
+    segments: [],
+    isLoadingImage: false,
+    currentCategoryIndex: 0,
+    searchQuery: '',
+};
+
+// ══════════════════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════════════════
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function log(msg) { console.log('[Studio] ' + msg); }
+function setStatus(text) {
+    const bar = document.getElementById('status-bar');
+    const txt = document.getElementById('status-text');
+    if (!bar || !txt) return;
+    if (text) { bar.classList.add('visible'); txt.textContent = text; }
+    else bar.classList.remove('visible');
+}
+function randomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+}
+function formatEta(seconds) {
+    if (seconds < 60) return Math.round(seconds) + 's';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.round(seconds % 60);
+    if (h > 0) return h + 'h ' + m + 'min';
+    return m + 'min' + (s > 0 ? ' ' + s + 's' : '');
+}
+function formatDuration(seconds) {
+    if (seconds < 60) return seconds + 's';
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return m + 'min' + (s > 0 ? ' ' + s + 's' : '');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// IMAGE
+// ══════════════════════════════════════════════════════════════════
+function fileToDataUri(file) {
+    return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = e => resolve(e.target.result);
+        r.onerror = () => reject(new Error('Erreur lecture'));
+        r.readAsDataURL(file);
+    });
+}
+function generateThumbnail(dataUri) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                const ratio = img.height / img.width;
+                canvas.width = THUMBNAIL_MAX_WIDTH;
+                canvas.height = Math.round(THUMBNAIL_MAX_WIDTH * ratio);
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL('image/jpeg', 0.65));
+            } catch (e) { resolve(dataUri); }
+        };
+        img.onerror = () => resolve(dataUri);
+        img.src = dataUri;
+    });
+}
+async function handleFile(files) {
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    if (!file.type.startsWith('image/')) return;
+    if (file.size > MAX_IMAGE_SIZE) { showToast('Image trop lourde', 'error'); return; }
+    state.isLoadingImage = true;
+    updateGenerateBtn();
+    setStatus('Chargement de l\'image…');
+    try {
+        const dataUri = await fileToDataUri(file);
+        const thumbnail = await generateThumbnail(dataUri);
+        state.image = { file, dataUri, thumbnail, id: Date.now() };
+        renderImage();
+        showToast('Image chargée ✓', 'success');
+    } catch (e) { showToast('Erreur de chargement', 'error'); }
+    state.isLoadingImage = false;
+    setStatus(null);
+    updateGenerateBtn();
+}
+function removeImage() {
+    state.image = null;
+    renderImage();
+    updateGenerateBtn();
+}
+function renderImage() {
+    const grid = document.getElementById('images-grid');
+    if (!grid) return;
+    if (!state.image) { grid.innerHTML = ''; document.getElementById('count-badge').textContent = '0 img'; return; }
+    grid.innerHTML = '<div class="image-card">' +
+        '<img src="' + (state.image.thumbnail || state.image.dataUri) + '" alt="">' +
+        '<button class="remove" data-remove="1">✕</button>' +
+        '</div>';
+    document.getElementById('count-badge').textContent = '1 img';
+    const btn = grid.querySelector('[data-remove]');
+    if (btn) btn.addEventListener('click', (e) => { e.stopPropagation(); removeImage(); });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// API KEY
+// ══════════════════════════════════════════════════════════════════
+function getApiKey() {
+    try { return (localStorage.getItem(API_KEY_STORAGE) || '').trim(); } catch (e) { return ''; }
+}
+function saveApiKey() {
+    const input = document.getElementById('api-key-input');
+    if (!input) return;
+    const key = input.value.trim();
+    if (!key) {
+        try { localStorage.removeItem(API_KEY_STORAGE); } catch (e) {}
+        updateApiPanel(); showToast('Clé supprimée', 'warn'); return;
+    }
+    try {
+        localStorage.setItem(API_KEY_STORAGE, key);
+        updateApiPanel(); showToast('Clé enregistrée ✓', 'success'); input.blur();
+    } catch (e) { showToast('Erreur sauvegarde', 'error'); }
+}
+function updateApiPanel() {
+    const status = document.getElementById('api-status');
+    const text = document.getElementById('api-status-text');
+    const pill = document.getElementById('api-pill');
+    const input = document.getElementById('api-key-input');
+    const key = getApiKey();
+    if (!status || !text || !pill || !input) return;
+    if (key) {
+        status.classList.add('ok');
+        text.textContent = 'Clé active · ' + key.slice(0, 6) + '…' + key.slice(-4);
+        pill.textContent = 'prêt';
+        input.value = key;
+        input.placeholder = '';
+    } else {
+        status.classList.remove('ok');
+        text.textContent = 'Aucune clé enregistrée';
+        pill.textContent = 'requis';
+        input.value = '';
+        input.placeholder = 'sk-... (collez votre clé)';
+    }
+    updateGenerateBtn();
+}
+function updateGenerateBtn() {
+    const btn = document.getElementById('generate-btn');
+    if (!btn) return;
+    const hasImage = !!state.image;
+    const hasKey = !!getApiKey();
+    btn.disabled = !hasImage || !hasKey || state.isRunning || state.isLoadingImage;
+    if (state.isLoadingImage) btn.textContent = 'Chargement…';
+    else if (state.isRunning) {
+        const done = state.completed + state.failed;
+        btn.textContent = 'En cours… (' + done + '/' + state.totalSegments + ')';
+    }
+    else if (!hasKey) btn.textContent = '🔑 Ajoutez votre clé API';
+    else if (!hasImage) btn.textContent = '📷 Ajoutez une image';
+    else btn.textContent = '🎬 Générer ' + formatDuration(state.totalSeconds) + ' (' + state.totalSegments + ' segments)';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PRESETS
+// ══════════════════════════════════════════════════════════════════
+function renderPromptPresets() {
+    const c = document.getElementById('prompt-presets');
+    if (!c) return;
+    c.innerHTML = PROMPT_PRESETS.map((p, i) =>
+        '<div class="preset-chip" data-preset="' + i + '">' + esc(p.label) + '</div>'
+    ).join('');
+    c.querySelectorAll('.preset-chip').forEach(el => {
+        el.addEventListener('click', () => {
+            const idx = parseInt(el.dataset.preset, 10);
+            const preset = PROMPT_PRESETS[idx];
+            if (!preset) return;
+            const ta = document.getElementById('main-prompt');
+            ta.value = preset.text;
+            state.mainPrompt = preset.text;
+            showToast(preset.label + ' appliqué', 'success', 1200);
+        });
+    });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CATÉGORIES
+// ══════════════════════════════════════════════════════════════════
+function renderCategorySelect() {
+    const sel = document.getElementById('category-select');
+    if (!sel) return;
+    sel.innerHTML = CATEGORIES.map((c, i) =>
+        '<option value="' + i + '">' + esc(c.name) + ' · ' + c.effects.length + '</option>'
+    ).join('');
+    sel.value = String(state.currentCategoryIndex);
+}
+function getFilteredEffects() {
+    if (state.searchQuery.trim()) {
+        const q = state.searchQuery.toLowerCase();
+        return ALL_EFFECTS.filter(e =>
+            e.name.toLowerCase().includes(q) ||
+            e.desc.toLowerCase().includes(q) ||
+            e.id.toLowerCase().includes(q)
+        );
+    }
+    const cat = CATEGORIES[state.currentCategoryIndex];
+    return cat ? cat.effects : [];
+}
+function renderEffects() {
+    const grid = document.getElementById('effects-grid');
+    const counter = document.getElementById('effects-counter-text');
+    if (!grid) return;
+    const effects = getFilteredEffects();
+    if (counter) counter.textContent = effects.length + ' effet' + (effects.length > 1 ? 's' : '');
+    let html = '<div class="none-chip ' + (state.selectedEffect === null ? 'selected' : '') + '" data-effect="none">' +
+        (state.selectedEffect === null ? '✓ Aucun effet' : '🚫 Aucun effet') +
+    '</div>';
+    html += effects.map(e => {
+        const sel = state.selectedEffect === e.id ? 'selected' : '';
+        return '<div class="effect-chip ' + sel + '" data-effect="' + esc(e.id) + '">' +
+            '<div class="emo">' + e.emoji + '</div>' +
+            '<div class="info">' +
+                '<div class="name">' + esc(e.name) + '</div>' +
+                '<div class="desc">' + esc(e.desc) + '</div>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+    grid.innerHTML = html;
+    grid.querySelectorAll('[data-effect]').forEach(el => {
+        el.addEventListener('click', () => {
+            const val = el.dataset.effect;
+            state.selectedEffect = (val === 'none') ? null : val;
+            renderEffects();
+        });
+    });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// DURÉE
+// ══════════════════════════════════════════════════════════════════
+function updateDurationInfo(seconds) {
+    const segments = Math.max(1, Math.ceil(seconds / SEGMENT_SECONDS));
+    document.getElementById('duration-big').textContent = formatDuration(seconds);
+    const estPerSegment = 90000 / 1000;
+    const totalEstimate = segments * ((createIntervalMs / 1000) + estPerSegment);
+    document.getElementById('duration-detail').innerHTML =
+        '≈ ' + segments + ' segment' + (segments > 1 ? 's' : '') + ' de 5s<br>' +
+        'Durée estimée : ' + formatEta(totalEstimate);
+}
+function selectDuration(seconds) {
+    state.totalSeconds = seconds;
+    state.totalSegments = Math.max(1, Math.ceil(seconds / SEGMENT_SECONDS));
+    document.getElementById('duration-pill').textContent = formatDuration(seconds);
+    document.querySelectorAll('.duration-chip').forEach(c => {
+        c.classList.toggle('selected', parseInt(c.dataset.sec, 10) === seconds);
+    });
+    updateDurationInfo(seconds);
+    updateGenerateBtn();
+}
+function initDurationGrid() {
+    const grid = document.getElementById('duration-grid');
+    if (!grid) return;
+    grid.querySelectorAll('.duration-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const sec = parseInt(chip.dataset.sec, 10);
+            selectDuration(sec);
+        });
+    });
+    const customBtn = document.getElementById('custom-duration-btn');
+    const customInput = document.getElementById('custom-duration-input');
+    if (customBtn && customInput) {
+        customBtn.addEventListener('click', () => {
+            const min = parseFloat(customInput.value);
+            if (!min || min < 1 || min > 60) { showToast('Entre 1 et 60 minutes', 'warn'); return; }
+            selectDuration(Math.round(min * 60));
+            showToast('Durée : ' + min + ' min', 'success');
+        });
+        customInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') { e.preventDefault(); customBtn.click(); }
+        });
+    }
+    selectDuration(30);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PROMPT
+// ══════════════════════════════════════════════════════════════════
+function buildPrompt() {
+    const effect = state.selectedEffect ? ALL_EFFECTS.find(s => s.id === state.selectedEffect) : null;
+    const hasUser = state.mainPrompt && state.mainPrompt.trim().length > 0;
+    const parts = [];
+    parts.push('Animate this exact image as the starting frame. The subject must remain IDENTICAL: same face, expression, clothing, pose, identity.');
+    if (effect) parts.push(effect.prompt);
+    if (hasUser) parts.push('Artistic direction: ' + state.mainPrompt.trim());
+    if (state.framing !== 'random' && FRAMING_PRESETS[state.framing]) parts.push(FRAMING_PRESETS[state.framing]);
+    parts.push(state.intensity !== 'random' && INTENSITY_PRESETS[state.intensity]
+        ? INTENSITY_PRESETS[state.intensity]
+        : 'moderate movement, clear but controlled motion');
+    parts.push(randomItem(RANDOM_ACTIONS));
+    parts.push(randomItem(RANDOM_CAMERA));
+    parts.push(randomItem(RANDOM_LIGHTING));
+    parts.push('Sound design: minimal foley, soft ambient, no music, no dialogue');
+    parts.push('Portrait 9:16 vertical, 24fps, no text, no subtitles, no watermarks');
+    return parts.join('. ');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// API AGNES
+// ══════════════════════════════════════════════════════════════════
+async function apiFetch(url, options = {}, label = 'API') {
+    for (let attempt = 0; attempt < 7; attempt++) {
+        if (state.stopRequested) throw new Error('Arrêt demandé');
+        try {
+            const res = await fetch(url, options);
+            if (res.status === 429) {
+                if (createIntervalMs < CREATE_INTERVAL_MAX) createIntervalMs = Math.min(createIntervalMs + 8000, CREATE_INTERVAL_MAX);
+                const wait = [15, 30, 45, 60, 90, 120, 180][Math.min(attempt, 6)];
+                setStatus('IA se prépare… (' + wait + 's)');
+                await sleep(wait * 1000); continue;
+            }
+            if (res.status === 503) {
+                const wait = [5, 10, 15, 20, 30, 45][Math.min(attempt, 5)];
+                setStatus('Préparation… (' + wait + 's)');
+                await sleep(wait * 1000); continue;
+            }
+            return res;
+        } catch (e) {
+            if (e.message === 'Arrêt demandé') throw e;
+            const wait = [3, 5, 8, 12, 20, 30][Math.min(attempt, 5)];
+            setStatus('Connexion… (' + wait + 's)');
+            await sleep(wait * 1000);
+        }
+    }
+    return fetch(url, options);
+}
+async function createVideoTask(imageDataUri, prompt) {
+    const body = { model: MODEL_VIDEO, prompt, image: imageDataUri, num_frames: SEGMENT_FRAMES, frame_rate: FRAME_RATE };
+    const res = await apiFetch(API_BASE + '/videos', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + getApiKey(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    }, 'Création');
+    if (!res.ok) {
+        const err = await res.text();
+        console.error('[Studio] Erreur création :', res.status, err);
+        throw new Error('HTTP ' + res.status + ' — ' + err.slice(0, 200));
+    }
+    const data = await res.json();
+    const videoId = data.video_id || data.id || data.task_id;
+    if (!videoId) throw new Error('Pas de video_id');
+    return videoId;
+}
+async function pollVideo(videoId, onProgress) {
+    for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
+        if (state.stopRequested) throw new Error('Arrêt demandé');
+        const url = POLL_BASE + '?video_id=' + encodeURIComponent(videoId) + '&model_name=' + encodeURIComponent(MODEL_VIDEO);
+        try {
+            const res = await fetch(url, { method: 'GET', headers: { 'Authorization': 'Bearer ' + getApiKey() } });
+            if (res.ok) {
+                const d = await res.json();
+                const status = d.status || 'unknown';
+                const progress = d.progress || 0;
+                onProgress('Création… ' + progress + '%');
+                if (status === 'completed' || status === 'succeeded' || status === 'done') {
+                    const videoUrl = (d.metadata && d.metadata.url) || d.url || (d.output && d.output.url);
+                    if (!videoUrl) throw new Error('Terminé mais pas d\'URL');
+                    return videoUrl;
+                }
+                if (status === 'failed' || status === 'error' || status === 'cancelled') {
+                    throw new Error('Échec (' + status + ')');
+                }
+            } else {
+                onProgress('Vérification…');
+            }
+        } catch (e) {
+            if (e.message === 'Arrêt demandé') throw e;
+            log('Polling erreur : ' + e.message);
+        }
+        let r = POLL_INTERVAL_SEC;
+        while (r > 0) {
+            if (state.stopRequested) throw new Error('Arrêt demandé');
+            onProgress('En cours… ' + r + 's');
+            await sleep(1000);
+            r--;
+        }
+    }
+    throw new Error('Délai dépassé');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// QUEUE
+// ══════════════════════════════════════════════════════════════════
+function renderQueue() {
+    const el = document.getElementById('queue');
+    if (!el) return;
+    if (!state.segments.length) { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    const total = state.segments.length;
+    const done = state.completed + state.failed;
+    const inProgress = state.segments.filter(s => s.status === 'processing').length;
+    const pending = total - done - inProgress;
+    const estGen = 90000 / 1000;
+    const eta = pending > 0 ? (pending * ((createIntervalMs / 1000) + estGen)) + (inProgress * estGen) : 0;
+    let html = '<div class="queue-summary">' +
+        '<span class="prog">' + done + ' / ' + total + ' segments</span>' +
+        '<span class="eta">' + (done < total ? '≈ ' + formatEta(eta) + ' restant' : 'Terminé') + '</span>' +
+        '</div>';
+    html += state.segments.slice(0, 30).map(item => {
+        let emo = '○', statusText = 'En attente', cls = 'pending';
+        if (item.status === 'creating') { emo = '◐'; statusText = 'Préparation…'; cls = 'creating'; }
+        else if (item.status === 'processing') { emo = '◐'; statusText = item.progress || 'En cours'; cls = 'processing'; }
+        else if (item.status === 'done') { emo = '●'; statusText = 'Terminé'; cls = 'done'; }
+        else if (item.status === 'failed') { emo = '✕'; statusText = 'Échec'; cls = 'failed'; }
+        return '<div class="q-item ' + cls + '">' +
+            '<div class="q-emo">' + emo + '</div>' +
+            '<div class="q-name">Segment ' + (item.index + 1) + '</div>' +
+            '<div class="q-status">' + esc(statusText) + '</div>' +
+        '</div>';
+    }).join('');
+    el.innerHTML = html;
+}
+function updateGlobalProgress() {
+    const bar = document.getElementById('global-progress');
+    const fill = document.getElementById('global-progress-bar');
+    if (!bar || !fill) return;
+    if (!state.isRunning || !state.segments.length) { bar.classList.remove('visible'); return; }
+    bar.classList.add('visible');
+    const done = state.completed + state.failed;
+    fill.style.width = ((done / state.segments.length) * 100) + '%';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GALERIE
+// ══════════════════════════════════════════════════════════════════
+function addToGallery(videoUrl, label, index) {
+    const galleryEl = document.getElementById('gallery');
+    const grid = document.getElementById('gallery-grid');
+    if (!galleryEl || !grid) return;
+    galleryEl.style.display = 'block';
+    const div = document.createElement('div');
+    div.className = 'gallery-item';
+    div.innerHTML = '<video controls preload="metadata" muted playsinline>' +
+        '<source src="' + videoUrl + '" type="video/mp4">' +
+        '</video>' +
+        '<div class="cap">' +
+            '<span>' + esc(label) + '</span>' +
+            '<a class="dl" href="' + videoUrl + '" download="video_' + String(index).padStart(3, '0') + '.mp4" target="_blank" rel="noopener">⬇ DL</a>' +
+        '</div>';
+    grid.appendChild(div);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PIPELINE
+// ══════════════════════════════════════════════════════════════════
+async function createAndPollSegment(segment) {
+    try {
+        segment.status = 'creating';
+        segment.progress = 'Préparation…';
+        renderQueue();
+
+        const prompt = buildPrompt();
+        log('Segment ' + (segment.index + 1) + ' : création…');
+        const videoId = await createVideoTask(state.image.dataUri, prompt);
+        log('Segment ' + (segment.index + 1) + ' : tâche ' + String(videoId).slice(0, 20));
+        segment.videoId = videoId;
+        segment.status = 'processing';
+        segment.progress = 'En cours';
+        renderQueue();
+
+        const videoUrl = await pollVideo(videoId, (prog) => {
+            segment.progress = prog;
+            renderQueue();
+        });
+
+        segment.status = 'done';
+        segment.videoUrl = videoUrl;
+        segment.progress = 'Terminé';
+        state.completed++;
+        renderQueue();
+        updateGenerateBtn();
+        updateGlobalProgress();
+        addToGallery(videoUrl, 'Vidéo ' + (segment.index + 1), segment.index + 1);
+        log('Segment ' + (segment.index + 1) + ' : ✓');
+    } catch (e) {
+        if (e.message === 'Arrêt demandé') {
+            segment.status = 'failed';
+            segment.progress = 'Arrêté';
+        } else {
+            console.error('[Studio] Segment ' + (segment.index + 1) + ' échec :', e.message);
+            segment.status = 'failed';
+            segment.progress = 'Échec';
+            state.failed++;
+        }
+        renderQueue();
+        updateGenerateBtn();
+        updateGlobalProgress();
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// WORKFLOW PRINCIPAL
+// ══════════════════════════════════════════════════════════════════
+async function startGeneration() {
+    if (state.isRunning || !state.image) return;
+    if (!getApiKey()) {
+        showToast('Ajoutez votre clé API', 'error');
+        document.getElementById('card-api').classList.add('open');
+        document.getElementById('api-key-input').focus();
+        return;
+    }
+    state.mainPrompt = document.getElementById('main-prompt').value.trim();
+
+    if (state.totalSegments > 60) {
+        const est = state.totalSegments * ((createIntervalMs / 1000) + 90);
+        const ok = confirm(
+            'Tu t\'apprêtes à générer ' + state.totalSegments + ' segments (' + formatDuration(state.totalSeconds) + ').\n\n' +
+            'Durée estimée : ' + formatEta(est) + '\n\n' +
+            'Cela consommera beaucoup de quota API. Continuer ?'
+        );
+        if (!ok) return;
+    }
+
+    state.isRunning = true;
+    state.stopRequested = false;
+    state.completed = 0;
+    state.failed = 0;
+    createIntervalMs = CREATE_INTERVAL_MIN;
+
+    state.segments = [];
+    for (let i = 0; i < state.totalSegments; i++) {
+        state.segments.push({
+            index: i, status: 'pending', progress: null,
+            videoId: null, videoUrl: null
+        });
+    }
+
+    document.getElementById('gallery-grid').innerHTML = '';
+    document.getElementById('gallery').style.display = 'none';
+    document.getElementById('stop-btn').style.display = 'block';
+    document.getElementById('generate-btn').disabled = true;
+
+    renderQueue();
+    updateGenerateBtn();
+    updateGlobalProgress();
+
+    console.log('[Studio] Démarrage : ' + state.totalSegments + ' segment(s)');
+
+    const pollingTasks = [];
+
+    try {
+        for (let i = 0; i < state.segments.length; i++) {
+            if (state.stopRequested) break;
+            const segment = state.segments[i];
+
+            pollingTasks.push(createAndPollSegment(segment));
+
+            if (i < state.segments.length - 1 && !state.stopRequested) {
+                const waitSec = Math.ceil(createIntervalMs / 1000);
+                for (let r = waitSec; r > 0; r--) {
+                    if (state.stopRequested) break;
+                    setStatus('Attente… Segment ' + (i + 2) + '/' + state.totalSegments + ' dans ' + r + 's');
+                    await sleep(1000);
+                }
+            }
+        }
+        if (pollingTasks.length > 0) {
+            setStatus('Finalisation…');
+            await Promise.allSettled(pollingTasks);
+        }
+    } catch (e) {
+        console.error('[Studio] Erreur globale :', e);
+    }
+
+    setStatus('✦ ' + state.completed + '/' + state.totalSegments + ' vidéos créées ✦');
+    await sleep(3000);
+    setStatus(null);
+
+    state.isRunning = false;
+    state.stopRequested = false;
+    document.getElementById('stop-btn').style.display = 'none';
+    updateGenerateBtn();
+    updateGlobalProgress();
+    showToast(state.completed + ' vidéo' + (state.completed > 1 ? 's' : '') + ' créée' + (state.completed > 1 ? 's' : ''), 'success');
+}
+function stopGeneration() {
+    if (!state.isRunning) return;
+    state.stopRequested = true;
+    setStatus('Arrêt…');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+(function init() {
+    try {
+        document.getElementById('api-save-btn').addEventListener('click', saveApiKey);
+        document.getElementById('stop-btn').addEventListener('click', stopGeneration);
+        document.getElementById('api-key-input').addEventListener('keydown', e => {
+            if (e.key === 'Enter') { e.preventDefault(); saveApiKey(); }
+        });
+        document.querySelectorAll('[data-toggle]').forEach(h => {
+            h.addEventListener('click', () => {
+                document.getElementById(h.dataset.toggle).classList.toggle('open');
+            });
+        });
+        const uploadZone = document.getElementById('upload-zone');
+        const fileInput = document.getElementById('file-input');
+        uploadZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', e => { handleFile(e.target.files); fileInput.value = ''; });
+        document.getElementById('main-prompt').addEventListener('input', e => { state.mainPrompt = e.target.value; });
+        document.getElementById('framing-select').addEventListener('change', e => { state.framing = e.target.value; });
+        document.getElementById('intensity-select').addEventListener('change', e => { state.intensity = e.target.value; });
+        document.getElementById('generate-btn').addEventListener('click', () => {
+            startGeneration().catch(err => {
+                console.error('Erreur startGeneration :', err);
+                showToast('Erreur : ' + err.message, 'error', 5000);
+            });
+        });
+        document.getElementById('wake-toggle-btn').addEventListener('click', toggleWakeLock);
+        document.getElementById('category-select').addEventListener('change', e => {
+            state.currentCategoryIndex = parseInt(e.target.value, 10);
+            state.searchQuery = '';
+            document.getElementById('search-input').value = '';
+            renderEffects();
+        });
+        let searchTimeout = null;
+        document.getElementById('search-input').addEventListener('input', e => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                state.searchQuery = e.target.value;
+                renderEffects();
+            }, 200);
+        });
+        document.getElementById('random-btn').addEventListener('click', () => {
+            const r = ALL_EFFECTS[Math.floor(Math.random() * ALL_EFFECTS.length)];
+            state.selectedEffect = r.id;
+            state.searchQuery = '';
+            document.getElementById('search-input').value = '';
+            renderEffects();
+            showToast(r.emoji + ' ' + r.name, 'success', 1600);
+        });
+        try { wakeLockEnabled = localStorage.getItem(WAKE_LOCK_PREF) === '1'; } catch (e) {}
+        updateApiPanel();
+        updateWakeBtn();
+        renderPromptPresets();
+        renderCategorySelect();
+        renderEffects();
+        renderImage();
+        renderQueue();
+        initDurationGrid();
+        console.log('[Studio] Prêt — ' + ALL_EFFECTS.length + ' effets, ' + CATEGORIES.length + ' catégories.');
+    } catch (err) {
+        console.error('Erreur init :', err);
+        showToast('Erreur de démarrage : ' + err.message, 'error', 6000);
+    }
+})();
+</script>
+
+</body>
+</html>
